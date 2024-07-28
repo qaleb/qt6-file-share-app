@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/">
+        <file>assets/icons/ArrowBack.png</file>
+        <file>assets/icons/MoreIcon.png</file>
+        <file>assets/icons/OpenFolder.png</file>
+        <file>assets/icons/OpenFolder.svg</file>
+        <file>assets/icons/SettingsDark.png</file>
+        <file>assets/icons/SettingsDark.svg</file>
+        <file>assets/icons/SettingsDark128.png</file>
+        <file>assets/icons/SettingsDark40.png</file>
+        <file>assets/icons/SettingsDark40.svg</file>
+        <file>assets/icons/SettingsDarkNew.svg</file>
+        <file>assets/icons/SettingsDarkOld.png</file>
+        <file>assets/icons/SettingsWhite.png</file>
+        <file>assets/icons/SettingsWhite.svg</file>
+        <file>assets/icons/SettingsWhite40.png</file>
+        <file>assets/icons/ShowIpBlue.png</file>
+        <file>assets/icons/ShowIpDark.png</file>
+        <file>assets/icons/ShowIpDark.svg</file>
+        <file>assets/icons/SwipeDown.png</file>
+        <file>assets/icons/SwipeUp.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/Main.qml</file>
+        <file>qml/BuddiesPage.qml</file>
+        <file>qml/RecentPage.qml</file>
+        <file>qml/AboutPage.qml</file>
+        <file>qml/BottomToolBar.qml</file>
+        <file>qml/TopTabBar.qml</file>
+    </qresource>
+</RCC>

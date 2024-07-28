@@ -1,9 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>assets/icons/SettingsWhite40.png</file>
-        <file>assets/icons/SettingsDark40.png</file>
-        <file>qml/main.qml</file>
-        <file>assets/icons/SettingsDark.svg</file>
-        <file>assets/icons/SettingsWhite.svg</file>
-    </qresource>
-</RCC>

@@ -1,12 +1,15 @@
 QT += quick
 
-SOURCES += \
-        src/main.cpp
+VERSION = 6.2024.01.01
+# Define the preprocessor macro to get the application version in our application.
+DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
-resources.files = src/qml/main.qml
-resources.prefix = /$${TARGET}
-RESOURCES += resources \
-    src/resource.qrc
+SOURCES += \
+    src/main.cpp
+
+RESOURCES += \
+    src/assets.qrc \
+    src/qml.qrc
 
 TRANSLATIONS += \
     src/language/dukto6_en_US.ts
