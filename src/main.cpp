@@ -24,8 +24,8 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
 
-    // Instantiate GuiBehind with the engine
-    GuiBehind guiBehind(engine);
+    // Use the singleton instance of GuiBehind
+    GuiBehind::instance(engine);
 
     const QUrl url(QStringLiteral("qrc:/qml/Main.qml"));
     QObject::connect(

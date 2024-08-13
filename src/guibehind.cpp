@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QQmlContext>
 
+// The constructor is private and can only be called within the singleton instance method
 GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
     QObject(parent), mSettings(this)
 {

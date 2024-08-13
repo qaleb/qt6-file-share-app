@@ -11,7 +11,11 @@ class GuiBehind : public QObject
 {
     Q_OBJECT
 public:
-    explicit GuiBehind(QQmlApplicationEngine &engine, QObject *parent = nullptr);
+    // Provide a static method to access the singleton instance
+    static GuiBehind& instance(QQmlApplicationEngine &engine) {
+        static GuiBehind instance(engine);
+        return instance;
+    }
 
     Q_INVOKABLE QString getCurrentThemeColor();
 
@@ -20,6 +24,11 @@ public slots:
     void refreshIpList();
 
 private:
+    // Make constructor private to prevent direct instantiation
+    explicit GuiBehind(QQmlApplicationEngine &engine, QObject *parent = nullptr);
+    GuiBehind(const GuiBehind&) = delete; // Delete copy constructor
+    GuiBehind& operator=(const GuiBehind&) = delete; // Delete assignment operator
+
     Settings mSettings;
     Theme mTheme;
     IpAddressItemModel mIpAddresses;
