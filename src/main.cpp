@@ -1,8 +1,8 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-
-#include <QLocale>
 #include <QTranslator>
+#include <QLocale>
+#include "guibehind.h"
 
 int main(int argc, char *argv[])
 {
@@ -18,7 +18,15 @@ int main(int argc, char *argv[])
         }
     }
 
+    QCoreApplication::setApplicationName("dukto");
+    QCoreApplication::setOrganizationName("idv.coolshou");
+    QCoreApplication::setOrganizationDomain("com.dukto");
+
     QQmlApplicationEngine engine;
+
+    // Instantiate GuiBehind with the engine
+    GuiBehind guiBehind(engine);
+
     const QUrl url(QStringLiteral("qrc:/qml/Main.qml"));
     QObject::connect(
         &engine,

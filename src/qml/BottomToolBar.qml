@@ -5,31 +5,39 @@ Item {
     id: bottomToolBar
     height: 71
     anchors.bottomMargin: -18
-
     state: "WithoutLabels"
-    Behavior on anchors.bottomMargin {
-        NumberAnimation {
-            duration: 200
-            easing.type: Easing.OutCubic
-        }
+
+    signal showIpList();
+    signal showSettings();
+
+    Behavior on anchors.bottomMargin { NumberAnimation { duration: 200; easing.type: "OutCubic" } }
+
+    Image {
+        source: "qrc:/assets/icons/BottomShadow.png"
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        fillMode: Image.TileHorizontally
     }
 
     Rectangle {
+        y: 3
         id: mainRect
-        anchors.fill: parent
-        color: "#dee3fa"
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: parent.height
+        color: theme.color2
 
-        Image {
+        IconImage {
             id: openFolderIcon
             anchors.top: parent.top
             anchors.topMargin: 5
             anchors.right: showIpIcon.left
-            anchors.rightMargin: 40
-            // width: 40
-            // height: 40
+            anchors.rightMargin: 50
             sourceSize.width: 40
             sourceSize.height: 40
             source: "qrc:/assets/icons/OpenFolder.svg"
+            color: "#fff"
         }
 
         Text {
@@ -40,18 +48,25 @@ Item {
             font.pixelSize: 12
             horizontalAlignment: Text.AlignHCenter
             width: 1
+            color: "#fff"
         }
 
-        Image {
+        IconImage {
             id: showIpIcon
             anchors.top: parent.top
             anchors.topMargin: 5
             anchors.horizontalCenter: parent.horizontalCenter
-            // width: 40
-            // height: 40
             sourceSize.width: 40
             sourceSize.height: 40
             source: "qrc:/assets/icons/ShowIpDark.svg"
+            color: "#fff"
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    guiBehind.refreshIpList();
+                    showIpList();
+                }
+            }
         }
 
         Text {
@@ -62,19 +77,24 @@ Item {
             font.pixelSize: 12
             horizontalAlignment: Text.AlignHCenter
             width: 1
+            color: "#fff"
         }
 
-        Image {
+        IconImage {
             id: settingsIcon
             anchors.top: parent.top
             anchors.topMargin: 5
             anchors.left: showIpIcon.right
-            anchors.leftMargin: 40
-            // width: 40
-            // height: 40
+            anchors.leftMargin: 50
             sourceSize.width: 40
             sourceSize.height: 40
-            source: "qrc:/assets/icons/SettingsDarkNew.svg"
+            source: "qrc:/assets/icons/SettingsDark.svg"
+            color: "#fff"
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: showSettings();
+            }
         }
 
         Text {
@@ -85,31 +105,26 @@ Item {
             font.pixelSize: 12
             horizontalAlignment: Text.AlignHCenter
             width: 1
+            color: "#fff"
         }
 
-        Image {
+        IconImage {
             id: moreIcon
             anchors.top: parent.top
             anchors.topMargin: 10
             anchors.right: parent.right
-            anchors.rightMargin: 15
-            width: 20
-            height: 20
+            anchors.rightMargin: 20
+            width: 20; height: 20
             source: "qrc:/assets/icons/SwipeUp.png"
             opacity: 1.0
-
-            Behavior on opacity {
-                OpacityAnimator {
-                    duration: 250
-                }
-            }
+            color: "#fff"
         }
-
 
         MouseArea {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            anchors.left: moreIcon.left
+            anchors.left: settingsIcon.right
+            anchors.leftMargin: 25
             anchors.right: parent.right
 
             onClicked: {
@@ -127,17 +142,14 @@ Item {
             }
         }
     }
+
     states: [
         State {
             name: "WithoutLabels"
 
             PropertyChanges {
                 target: bottomToolBar
-                anchors.bottomMargin: -22
-            }
-            PropertyChanges {
-                target: moreIcon
-                source: "qrc:/assets/icons/SwipeUp.png"
+                anchors.bottomMargin: -18
             }
         },
         State {
@@ -147,11 +159,6 @@ Item {
                 target: bottomToolBar
                 anchors.bottomMargin: 0
             }
-            PropertyChanges {
-                target: moreIcon
-                source: "qrc:/assets/icons/SwipeDown.png"
-            }
         }
     ]
-
 }

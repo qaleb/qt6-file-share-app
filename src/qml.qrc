@@ -6,5 +6,19 @@
         <file>qml/AboutPage.qml</file>
         <file>qml/BottomToolBar.qml</file>
         <file>qml/TopTabBar.qml</file>
+        <file>qml/SText.qml</file>
+        <file>qml/STextInput.qml</file>
+        <file>qml/SmoothText.qml</file>
+        <file>qml/IpPage.qml</file>
+        <file>qml/DuktoOverlay.qml</file>
+        <file>qml/BuddyListComponent.qml</file>
+        <file>qml/SettingsPage.qml</file>
+        <file>qml/ColorBox.qml</file>
+        <file>qml/ColorPicker.qml</file>
+        <file>qml/ColorSlider.qml</file>
+        <file>qml/ColorUtils.js</file>
+        <file>qml/SBPicker.qml</file>
+        <file>qml/Button.qml</file>
+        <file>qml/ButtonDark.qml</file>
     </qresource>
 </RCC>

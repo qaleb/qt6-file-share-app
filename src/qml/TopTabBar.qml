@@ -6,18 +6,19 @@ Item {
     state: "buddies"
 
     signal clicked(string tab)
+    property string themeColor: theme.color2
 
     Item {
         anchors.fill: parent
 
-        Text {
+        SmoothText {
             id: buddyText
             x: 10
             font.pixelSize: 84
             text: qsTr("buddies")
             width: buddyText.text.width
             transformOrigin: Item.TopLeft
-            color: buddyTextMouseArea.containsMouse ? "#248b00" : "#9c9c9c"
+            color: buddyTextMouseArea.containsMouse ? themeColor : "#9c9c9c"
             scale: 0.5
 
             MouseArea {
@@ -31,14 +32,14 @@ Item {
             }
         }
 
-        Text {
+        SmoothText {
             id: recentText
             x: 180
             font.pixelSize: 84
             text: qsTr("recent")
             width: recentText.text.width
             transformOrigin: Item.TopLeft
-            color: recentTextMouseArea.containsMouse ? "#248b00" : "#9c9c9c"
+            color: recentTextMouseArea.containsMouse ? themeColor : "#9c9c9c"
             scale: 0.5
 
             MouseArea {
@@ -52,14 +53,14 @@ Item {
             }
         }
 
-        Text {
+        SmoothText {
             id: aboutText
             x: 310
             font.pixelSize: 84
             text: qsTr("about")
             width: aboutText.text.width
             transformOrigin: Item.TopLeft
-            color: aboutTextMouseArea.containsMouse ? "#248b00" : "#9c9c9c"
+            color: aboutTextMouseArea.containsMouse ? themeColor : "#9c9c9c"
             scale: 0.5
 
             MouseArea {
@@ -79,7 +80,7 @@ Item {
 
             PropertyChanges {
                 target: buddyText
-                color: "#248b00"
+                color: themeColor
             }
         },
         State {
@@ -93,7 +94,7 @@ Item {
             PropertyChanges {
                 target: recentText
                 x: 100
-                color: "#248b00"
+                color: themeColor
             }
 
             PropertyChanges {
@@ -117,7 +118,7 @@ Item {
             PropertyChanges {
                 target: aboutText
                 x: 190
-                color: "#248b00"
+                color: themeColor
             }
         }
     ]
