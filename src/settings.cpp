@@ -20,7 +20,7 @@ QString Settings::currentPath()
 {
     // Retrieve the last saved path (if any)
     QString path = mSettings.value("DestPath", "").toString();
-    qDebug() << "The current path is:" << path;
+    // qDebug() << "The current path is:" << path;
     // Check if exists
     if ((path != "") && (QDir(path).exists()))
         return path;

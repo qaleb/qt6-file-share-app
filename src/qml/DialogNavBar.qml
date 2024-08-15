@@ -3,15 +3,14 @@ import QtQuick.Controls 2.15
 import QtQuick.Dialogs
 
 Item {
-    id: bottomToolBar
+    id: bottomNavBar
     height: 71
     anchors.bottomMargin: -18
     state: "WithoutLabels"
 
-    signal showIpList();
-    signal showSettings();
-
     Behavior on anchors.bottomMargin { NumberAnimation { duration: 200; easing.type: "OutCubic" } }
+
+    signal back()
 
     Image {
         source: "qrc:/assets/icons/BottomShadow.png"
@@ -30,65 +29,18 @@ Item {
         color: theme.color2
 
         IconImage {
-            id: openFolderIcon
-            anchors.top: parent.top
-            anchors.topMargin: 5
-            anchors.right: showIpIcon.left
-            anchors.rightMargin: 50
-            sourceSize.width: 40
-            sourceSize.height: 40
-            source: "qrc:/assets/icons/OpenFolder.svg"
-            color: "#fff"
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    if (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx") {
-                        guiBehind.openDestinationFolder();
-                    } else {
-                        folderDialog.open();
-                    }
-                }
-            }
-        }
-
-        Text {
-            anchors {
-                top: openFolderIcon.bottom
-                topMargin: 3
-                horizontalCenter: openFolderIcon.horizontalCenter
-            }
-            text: qsTr("Received")
-            font.pixelSize: 12
-            horizontalAlignment: Text.AlignHCenter
-            width: 1
-            color: "#fff"
-        }
-
-        FolderDialog {
-            id: folderDialog
-            title: qsTr("Change Folder")
-            options: {
-                FolderDialog.ShowDirsOnly;
-                FolderDialog.ReadOnly;
-            }
-            currentFolder: guiBehind.currentPath
-        }
-
-        IconImage {
             id: showIpIcon
             anchors.top: parent.top
             anchors.topMargin: 5
             anchors.horizontalCenter: parent.horizontalCenter
+            anchors.horizontalCenterOffset: -( parent.width / 6)
             sourceSize.width: 40
             sourceSize.height: 40
-            source: "qrc:/assets/icons/ShowIpDark.svg"
-            color: "#fff"
+            source: "qrc:/assets/icons/ArrowBack.svg"
+            color: theme.color6
             MouseArea {
                 anchors.fill: parent
-                onClicked: {
-                    guiBehind.refreshIpList();
-                    showIpList();
-                }
+                onClicked: bottomNavBar.back()
             }
         }
 
@@ -98,41 +50,43 @@ Item {
                 topMargin: 3
                 horizontalCenter: showIpIcon.horizontalCenter
             }
-            text: qsTr("Addresses")
+
+            text: qsTr("Back")
             font.pixelSize: 12
             horizontalAlignment: Text.AlignHCenter
             width: 1
-            color: "#fff"
+            color: theme.color6
         }
 
         IconImage {
             id: settingsIcon
             anchors.top: parent.top
             anchors.topMargin: 5
-            anchors.left: showIpIcon.right
-            anchors.leftMargin: 50
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.horizontalCenterOffset: ( parent.width / 6)
             sourceSize.width: 40
             sourceSize.height: 40
-            source: "qrc:/assets/icons/SettingsDark.svg"
-            color: "#fff"
+            source: "qrc:/assets/icons/ArrowUp.svg"
+            color: theme.color6
 
-            MouseArea {
-                anchors.fill: parent
-                onClicked: showSettings();
-            }
+            // MouseArea {
+            //     anchors.fill: parent
+            //     onClicked: showSettings();
+            // }
         }
 
         Text {
-            anchors {
+            anchors{
                 top: settingsIcon.bottom
                 topMargin: 3
                 horizontalCenter: settingsIcon.horizontalCenter
             }
-            text: qsTr("Settings")
+
+            text: qsTr("Up")
             font.pixelSize: 12
             horizontalAlignment: Text.AlignHCenter
             width: 1
-            color: "#fff"
+            color: theme.color6
         }
 
         IconImage {
@@ -144,7 +98,7 @@ Item {
             width: 20; height: 20
             source: "qrc:/assets/icons/SwipeUp.png"
             opacity: 1.0
-            color: "#fff"
+            color: theme.color6
         }
 
         MouseArea {
@@ -155,14 +109,15 @@ Item {
                 leftMargin: 25
                 right: parent.right
             }
+
             onClicked: {
-                if (bottomToolBar.state === "WithoutLabels") {
-                    bottomToolBar.state = "WithLabels";
+                if (bottomNavBar.state === "WithoutLabels") {
+                    bottomNavBar.state = "WithLabels";
                     moreIcon.opacity = 0.0;
                     moreIcon.source = "qrc:/assets/icons/SwipeDown.png";
                     moreIcon.opacity = 1.0;
                 } else {
-                    bottomToolBar.state = "WithoutLabels";
+                    bottomNavBar.state = "WithoutLabels";
                     moreIcon.opacity = 0.0;
                     moreIcon.source = "qrc:/assets/icons/SwipeUp.png";
                     moreIcon.opacity = 1.0;
@@ -176,7 +131,7 @@ Item {
             name: "WithoutLabels"
 
             PropertyChanges {
-                target: bottomToolBar
+                target: bottomNavBar
                 anchors.bottomMargin: -18
             }
         },
@@ -184,7 +139,7 @@ Item {
             name: "WithLabels"
 
             PropertyChanges {
-                target: bottomToolBar
+                target: bottomNavBar
                 anchors.bottomMargin: 0
             }
         }

@@ -4,13 +4,16 @@
 #include <QObject>
 #include <QQmlApplicationEngine>
 
-#include "theme.h"
-#include "settings.h"
-#include "ipaddressitemmodel.h"
 #include "buddylistitemmodel.h"
+#include "recentlistitemmodel.h"
+#include "ipaddressitemmodel.h"
 #include "destinationbuddy.h"
 #include "duktoprotocol.h"
+#include "theme.h"
+#include "settings.h"
+#include "miniwebserver.h"
 
+class MiniWebServer;
 class GuiBehind : public QObject
 {
     Q_OBJECT
@@ -48,16 +51,31 @@ signals:
     void hideAllOverlays();
 
 public slots:
-    // Called by QML
-    void changeThemeColor(QString color);
-    void refreshIpList();
-    void changeDestinationFolder(QString dirname);
-    void peerListAdded(Peer peer);
-    void peerListRemoved(Peer peer);
-    void showRandomBack();
-    void setBuddyName(QString name);
     QRect windowGeometry();
     void setWindowGeometry(QRect geo);
+
+    void showRandomBack();
+    // void clipboardChanged();
+
+    // Called by Dukto protocol
+    void peerListAdded(Peer peer);
+    void peerListRemoved(Peer peer);
+    // void receiveFileStart(QString senderIp);
+    // void transferStatusUpdate(qint64 total, qint64 partial);
+    // void receiveFileComplete(QStringList *files, qint64 totalSize);
+    // void receiveTextComplete(QString *text, qint64 totalSize);
+    // void sendFileComplete(QStringList *files);
+    // void sendFileError(int code);
+    // void receiveFileCancelled();
+    // void sendFileAborted();
+
+    // Called by QML
+    void refreshIpList();
+    void changeDestinationFolder(QString dirpath);
+    void openDestinationFolder();
+    // void showSendPage(QString ip);
+    void changeThemeColor(QString color);
+    void setBuddyName(QString name);
 
 private:
     // Make constructor private to prevent direct instantiation
@@ -65,12 +83,16 @@ private:
     GuiBehind(const GuiBehind&) = delete; // Delete copy constructor
     GuiBehind& operator=(const GuiBehind&) = delete; // Delete assignment operator
 
+    QTimer *mShowBackTimer;
+    QTimer *mPeriodicHelloTimer;
     Settings mSettings;
     Theme mTheme;
     IpAddressItemModel mIpAddresses;
     DestinationBuddy *mDestBuddy;
     BuddyListItemModel mBuddiesList;
     DuktoProtocol mDuktoProtocol;
+    MiniWebServer *mMiniWebServer;
+
 
     bool mTextSnippetSending;
     QString mMessagePageBackState;

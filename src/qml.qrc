@@ -21,5 +21,6 @@
         <file>qml/Button.qml</file>
         <file>qml/ButtonDark.qml</file>
         <file>qml/FileFolderDialog.qml</file>
+        <file>qml/DialogNavBar.qml</file>
     </qresource>
 </RCC>

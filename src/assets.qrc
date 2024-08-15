@@ -32,5 +32,6 @@
         <file>assets/icons/IpLogo.png</file>
         <file>assets/icons/PcLogo.png</file>
         <file>assets/icons/SmartphoneLogo.png</file>
+        <file>assets/icons/ArrowUp.svg</file>
     </qresource>
 </RCC>

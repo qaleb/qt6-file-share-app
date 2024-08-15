@@ -15,6 +15,7 @@ ApplicationWindow {
 
     Component.onCompleted: {
         var rect = guiBehind.windowGeometry();
+
         // Apply x and y position only on desktop platforms
         if (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx") {
             x = rect.x;

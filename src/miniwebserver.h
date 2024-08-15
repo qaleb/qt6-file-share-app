@@ -13,7 +13,7 @@ public:
     MiniWebServer(int port);
 
 protected:
-    virtual void incomingConnection(int handle);
+    virtual void incomingConnection(qintptr handle);
 
 private slots:
     void readClient();

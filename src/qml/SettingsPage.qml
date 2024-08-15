@@ -7,6 +7,12 @@ Rectangle {
     color: theme.color6
     focus: true
 
+    onVisibleChanged: {
+        if (visible) {
+            settingsPage.state = "";
+        }
+    }
+
     signal back()
 
     function refreshColor() {
@@ -100,7 +106,14 @@ Rectangle {
         anchors.top: textPath.bottom
         anchors.topMargin: 10
         label: qsTr("Change folder")
-        onClicked: folderDialog.open()  // Open the FileDialog
+        // onClicked: folderDialog.open()  // Open the FileDialog
+        onClicked: {
+            if (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx") {
+                folderDialog.open()
+            } else {
+                settingsPage.state = "showDialog";  // Open the FileDialog
+            }
+        }
     }
 
     FolderDialog {
@@ -156,13 +169,11 @@ Rectangle {
             anchors.fill: parent
             horizontalAlignment: "AlignLeft"
             font.pixelSize: 12
-            text: "PHAN-TEST"
-            // text: guiBehind.buddyName
-
-            // onAccepted: {
-            //     // Save the buddyName when editing is finished
-            //     guiBehind.setBuddyName(text);
-            // }
+            text: guiBehind.buddyName
+            onAccepted: {
+                // Save the buddyName when editing is finished
+                guiBehind.setBuddyName(text);
+            }
         }
 
         //Binding {
@@ -323,4 +334,36 @@ Rectangle {
             }
         }
     }
+
+    FileFolderDialog {
+        id: fileFolderDialog
+        anchors.centerIn: parent
+        anchors.fill: parent
+        opacity: 0
+        visible: false
+        onBack: parent.state = ""
+        // folder: guiBehind.currentPath // Display the current path
+        // folder: "/sdcard/Dukto"
+        // nameFilters: ""
+        // showFiles: ""
+        // fileUrl: ""
+    }
+
+    states: [
+        State {
+            name: "showDialog"
+            PropertyChanges {
+                target: fileFolderDialog
+                opacity: 1
+                visible: true
+            }
+        }
+    ]
+
+    transitions: [
+        Transition {
+            NumberAnimation { properties: "x,y"; easing.type: Easing.OutCubic; duration: 500 }
+            NumberAnimation { properties: "opacity"; easing.type: Easing.OutCubic; duration: 500 }
+        }
+    ]
 }

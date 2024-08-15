@@ -17,6 +17,7 @@ SOURCES += \
     src/main.cpp \
     src/miniwebserver.cpp \
     src/platform.cpp \
+    src/recentlistitemmodel.cpp \
     src/settings.cpp \
     src/theme.cpp \
     src/updateschecker.cpp
@@ -53,6 +54,7 @@ HEADERS += \
     src/miniwebserver.h \
     src/peer.h \
     src/platform.h \
+    src/recentlistitemmodel.h \
     src/settings.h \
     src/theme.h \
     src/updateschecker.h

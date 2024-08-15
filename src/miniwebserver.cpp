@@ -27,7 +27,7 @@ MiniWebServer::MiniWebServer(int port)
     }
 }
 
-void MiniWebServer::incomingConnection(int handle)
+void MiniWebServer::incomingConnection(qintptr handle)
 {
     QTcpSocket* s = new QTcpSocket(this);
     connect(s, SIGNAL(readyRead()), this, SLOT(readClient()));
@@ -39,7 +39,10 @@ void MiniWebServer::readClient()
 {
     QTcpSocket* socket = (QTcpSocket*)sender();
     if (socket->canReadLine()) {
-        QStringList tokens = QString(socket->readLine()).split(QRegularExpression("[ \r\n][ \r\n]*"));
+        // Define the QRegularExpression as static so it's only created once
+        static const QRegularExpression regex("[ \r\n][ \r\n]*");
+
+        QStringList tokens = QString(socket->readLine()).split(regex);
         if (tokens[0] == "GET") {
 
             QTextStream os(socket);

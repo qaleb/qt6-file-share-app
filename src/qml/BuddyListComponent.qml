@@ -2,7 +2,7 @@ import QtQuick 2.15
 
 Flipable {
     id: contactDelegateItem
-    width: parent.width
+    width: rootWindow.width
     height: buddyIp == "" ? 94 : 64
 
     property string buddyIp
@@ -59,7 +59,7 @@ Flipable {
                 Image {
                     id: buddyAvatarImage
                     anchors.fill: parent
-                    sourceSize.width: parent.width
+                    sourceSize.width: 64
                     fillMode: Image.PreserveAspectFit
                     anchors.margins: 5
                     smooth: true

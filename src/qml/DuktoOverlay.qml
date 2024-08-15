@@ -29,8 +29,7 @@ Rectangle {
     SettingsPage {
         id: settingsPage
         anchors.centerIn: parent
-        width: parent.width
-        height: parent.height
+        anchors.fill: parent
         opacity: 0
         onBack: parent.state = ""
         visible: false

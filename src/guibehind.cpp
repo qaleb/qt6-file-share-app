@@ -4,18 +4,29 @@
 #include <QDebug>
 #include <QQmlContext>
 #include <QDir>
+#include <QDesktopServices>
 #include <QRandomGenerator>
+#include <QStandardPaths>
+
+#include <QTimer>
+#include <QTime>
 
 #if defined(Q_OS_ANDROID)
 #include <QJniObject>
+#include <QJniEnvironment>
 #endif
+
+#define NETWORK_PORT 4644 // 6742
 
 // The constructor is private and can only be called within the singleton instance method
 GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
-    QObject(parent), mSettings(this), mDestBuddy(NULL)
+    QObject(parent), mSettings(this), mDestBuddy(NULL), mMiniWebServer(NULL)
 {
     // Change current folder
     QDir::setCurrent(mSettings.currentPath());
+
+    QString rootPath = QStandardPaths::standardLocations(QStandardPaths::DownloadLocation).value(0);
+    qDebug() << "The general download path is:" << rootPath;
 
     // Add "Me" entry
     mBuddiesList.addMeElement();
@@ -26,6 +37,9 @@ GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
     // Destination buddy
     mDestBuddy = new DestinationBuddy(this);
 
+    // Mini web server
+    mMiniWebServer = new MiniWebServer(NETWORK_PORT + 1);
+
     // Initialize and set the current theme color
     mTheme.setThemeColor(mSettings.themeColor());
 
@@ -35,6 +49,31 @@ GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
     engine.rootContext()->setContextProperty("ipAddressesData", &mIpAddresses);
     engine.rootContext()->setContextProperty("buddiesListData", &mBuddiesList);
     engine.rootContext()->setContextProperty("destinationBuddy", mDestBuddy);
+
+    // Register protocol signals
+    connect(&mDuktoProtocol, SIGNAL(peerListAdded(Peer)), this, SLOT(peerListAdded(Peer)));
+    connect(&mDuktoProtocol, SIGNAL(peerListRemoved(Peer)), this, SLOT(peerListRemoved(Peer)));
+    // connect(&mDuktoProtocol, SIGNAL(receiveFileStart(QString)), this, SLOT(receiveFileStart(QString)));
+    // connect(&mDuktoProtocol, SIGNAL(transferStatusUpdate(qint64,qint64)), this, SLOT(transferStatusUpdate(qint64,qint64)));
+    // connect(&mDuktoProtocol, SIGNAL(receiveFileComplete(QStringList*,qint64)), this, SLOT(receiveFileComplete(QStringList*,qint64)));
+    // connect(&mDuktoProtocol, SIGNAL(receiveTextComplete(QString*,qint64)), this, SLOT(receiveTextComplete(QString*,qint64)));
+    // connect(&mDuktoProtocol, SIGNAL(sendFileComplete(QStringList*)), this, SLOT(sendFileComplete(QStringList*)));
+    // connect(&mDuktoProtocol, SIGNAL(sendFileError(int)), this, SLOT(sendFileError(int)));
+    // connect(&mDuktoProtocol, SIGNAL(receiveFileCancelled()), this, SLOT(receiveFileCancelled()));
+    // connect(&mDuktoProtocol, SIGNAL(sendFileAborted()), this, SLOT(sendFileAborted()));
+
+    // Register other signals
+    // connect(this, SIGNAL(remoteDestinationAddressChanged()), this, SLOT(remoteDestinationAddressHandler()));
+
+    // Say "hello"
+    mDuktoProtocol.setPorts(NETWORK_PORT, NETWORK_PORT);
+    mDuktoProtocol.initialize();
+    mDuktoProtocol.sayHello(QHostAddress::Broadcast);
+
+    // Periodic "hello" timer
+    mPeriodicHelloTimer = new QTimer(this);
+    // connect(mPeriodicHelloTimer, SIGNAL(timeout()), this, SLOT(periodicHello()));
+    mPeriodicHelloTimer->start(60000);
 }
 
 void GuiBehind::changeThemeColor(QString color)
@@ -80,6 +119,11 @@ void GuiBehind::changeDestinationFolder(QString dirpath)
 
     // Save the new setting
     setCurrentPath(dirpath);
+}
+
+void GuiBehind::openDestinationFolder()
+{
+    QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::currentPath()));
 }
 
 // Add the new buddy to the buddy list
@@ -174,4 +218,3 @@ void GuiBehind::setMessagePageBackState(QString state)
     mMessagePageBackState = state;
     emit messagePageBackStateChanged();
 }
-
