@@ -33,5 +33,8 @@
         <file>assets/icons/PcLogo.png</file>
         <file>assets/icons/SmartphoneLogo.png</file>
         <file>assets/icons/ArrowUp.svg</file>
+        <file>assets/icons/Accept.svg</file>
+        <file>assets/icons/Cancel.svg</file>
+        <file>assets/icons/FolderUp.svg</file>
     </qresource>
 </RCC>

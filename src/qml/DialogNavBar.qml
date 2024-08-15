@@ -11,6 +11,8 @@ Item {
     Behavior on anchors.bottomMargin { NumberAnimation { duration: 200; easing.type: "OutCubic" } }
 
     signal back()
+    signal acceptFolder()
+    signal goUpFolder()
 
     Image {
         source: "qrc:/assets/icons/BottomShadow.png"
@@ -29,29 +31,31 @@ Item {
         color: theme.color2
 
         IconImage {
-            id: showIpIcon
-            anchors.top: parent.top
-            anchors.topMargin: 5
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.horizontalCenterOffset: -( parent.width / 6)
+            id: cancelIcon
+            anchors {
+                top: parent.top
+                topMargin: 5
+                right: acceptIcon.left
+                rightMargin: 50
+            }
             sourceSize.width: 40
             sourceSize.height: 40
-            source: "qrc:/assets/icons/ArrowBack.svg"
+            source: "qrc:/assets/icons/Cancel.svg"
             color: theme.color6
             MouseArea {
                 anchors.fill: parent
-                onClicked: bottomNavBar.back()
+                onClicked: back()
             }
         }
 
         Text {
             anchors {
-                top: showIpIcon.bottom
+                top: cancelIcon.bottom
                 topMargin: 3
-                horizontalCenter: showIpIcon.horizontalCenter
+                horizontalCenter: cancelIcon.horizontalCenter
             }
 
-            text: qsTr("Back")
+            text: qsTr("Cancel")
             font.pixelSize: 12
             horizontalAlignment: Text.AlignHCenter
             width: 1
@@ -59,27 +63,61 @@ Item {
         }
 
         IconImage {
-            id: settingsIcon
-            anchors.top: parent.top
-            anchors.topMargin: 5
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.horizontalCenterOffset: ( parent.width / 6)
+            id: acceptIcon
+            anchors {
+                top: parent.top
+                topMargin: 5
+                horizontalCenter: parent.horizontalCenter
+            }
             sourceSize.width: 40
             sourceSize.height: 40
-            source: "qrc:/assets/icons/ArrowUp.svg"
+            source: "qrc:/assets/icons/Accept.svg"
+            color: theme.color6
+            MouseArea {
+                anchors.fill: parent
+                onClicked: acceptFolder();
+            }
+        }
+
+        Text {
+            anchors {
+                top: acceptIcon.bottom
+                topMargin: 3
+                horizontalCenter: acceptIcon.horizontalCenter
+            }
+
+            text: qsTr("Accept")
+            font.pixelSize: 12
+            horizontalAlignment: Text.AlignHCenter
+            width: 1
+            color: theme.color6
+        }
+
+        IconImage {
+            id: upIcon
+            anchors {
+                top: parent.top
+                topMargin: 5
+                left: acceptIcon.right
+                leftMargin: 50
+            }
+
+            sourceSize.width: 40
+            sourceSize.height: 40
+            source: "qrc:/assets/icons/FolderUp.svg"
             color: theme.color6
 
-            // MouseArea {
-            //     anchors.fill: parent
-            //     onClicked: showSettings();
-            // }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: goUpFolder();
+            }
         }
 
         Text {
             anchors{
-                top: settingsIcon.bottom
+                top: upIcon.bottom
                 topMargin: 3
-                horizontalCenter: settingsIcon.horizontalCenter
+                horizontalCenter: upIcon.horizontalCenter
             }
 
             text: qsTr("Up")
@@ -105,7 +143,7 @@ Item {
             anchors {
                 top: parent.top
                 bottom: parent.bottom
-                left: settingsIcon.right
+                left: upIcon.right
                 leftMargin: 25
                 right: parent.right
             }

@@ -13,10 +13,31 @@ Rectangle {
 
     signal back();
 
+    // Function to extract the base name from the current folder
+    function extractBaseName(folderPath) {
+        if (folderPath) {
+            var pathString = folderPath.toString(); // Ensure the path is a string
+            var parts = pathString.split("/");
+            return parts[parts.length - 1];
+        }
+        return "";
+    }
+
+    // Function to go up one folder level
+    function navigateUpFolder() {
+        if (folderModel.folder && folderModel.folder !== "/") {
+            var newPath = folderModel.folder.toString().split("/");
+            newPath.pop();
+            folderModel.folder = newPath.join("/") || "/"; // Handle empty path
+            dialogTitle.text = extractBaseName(folderModel.folder);
+            currentPathText.text = folderModel.folder;
+        }
+    }
+
     // Title and Current Path Display
     SmoothText {
         id: dialogTitle
-        anchors{
+        anchors {
             top: parent.top
             topMargin: 5
             left: parent.left
@@ -25,13 +46,13 @@ Rectangle {
             rightMargin: 15
         }
         font.pixelSize: 64
-        text: folderModel.folder
+        text: extractBaseName(folderModel.folder) // Set the title to the base name
         color: theme.color3
     }
 
     Text {
         id: currentPathText
-        anchors{
+        anchors {
             top: dialogTitle.bottom
             topMargin: -35
             left: parent.left
@@ -51,12 +72,8 @@ Rectangle {
             bottom: parent.bottom
             bottomMargin: 75
             left: parent.left
-            // leftMargin: 10
             right: parent.right
-            // rightMargin: 10
         }
-
-        // spacing: 10
 
         // Folder List View
         ListView {
@@ -65,7 +82,6 @@ Rectangle {
             Layout.fillHeight: true
             model: FolderListModel {
                 id: folderModel
-                // folder: "/storage/emulated/0"
                 folder: guiBehind.currentPath
                 nameFilters: ["*.*"]
                 showFiles: false
@@ -78,13 +94,8 @@ Rectangle {
                 font.pixelSize: 18
                 icon.source: folderModel.isFolder(index) ? "qrc:/assets/icons/folder-fill.svg" : "qrc:/assets/icons/file-fill.svg"
                 onClicked: {
-                    // console.log("Currently navigated path is: " + fileUrl);
-                    // console.log("parentFolder: " + folderModel.parentFolder);
-                    // console.log("rootFolder : " + folderModel.rootFolder );
-                    // console.log("filePath : " + filePath );
-
                     dialogTitle.text = fileBaseName;
-                    currentPathText.text = fileUrl;
+                    currentPathText.text = filePath;
                     if (folderModel.isFolder(index)) {
                         folderModel.folder += "/" + fileName
                     } else {
@@ -101,6 +112,14 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         onBack: fileFolderDialog.back()
+        onAcceptFolder: {
+            guiBehind.changeDestinationFolder(currentPathText.text);
+            fileFolderDialog.back()
+        }
+
+        onGoUpFolder: {
+            navigateUpFolder(); // Call the function to go up one folder level
+        }
         visible: true
     }
 }
