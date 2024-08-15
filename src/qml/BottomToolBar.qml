@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Dialogs
 
 Item {
     id: bottomToolBar
@@ -38,6 +39,12 @@ Item {
             sourceSize.height: 40
             source: "qrc:/assets/icons/OpenFolder.svg"
             color: "#fff"
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    folderDialog.open();
+                }
+            }
         }
 
         Text {
@@ -49,6 +56,16 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             width: 1
             color: "#fff"
+        }
+
+        FolderDialog {
+            id: folderDialog
+            title: qsTr("Change Folder")
+            options: {
+                FolderDialog.ShowDirsOnly;
+                FolderDialog.ReadOnly;
+            }
+            currentFolder: guiBehind.currentPath
         }
 
         IconImage {

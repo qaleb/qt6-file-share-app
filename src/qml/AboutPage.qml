@@ -18,8 +18,11 @@ Item {
             height: 64
             color: theme.color2
             Image {
-                source: "qrc:/assets/icons/DuktoMetroIcon.png"
+                source: "qrc:/assets/icons/DuktoMetroIcon.svg"
                 anchors.fill: parent
+                sourceSize.width: parent.width
+                fillMode: Image.PreserveAspectFit
+                anchors.margins: 5
             }
         }
 

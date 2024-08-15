@@ -16,5 +16,21 @@
         <file>assets/icons/TileGradient.png</file>
         <file>assets/icons/AppleLogo.png</file>
         <file>assets/icons/WindowsLogo.png</file>
+        <file>assets/icons/AppleLogo.svg</file>
+        <file>assets/icons/ArrowBack.svg</file>
+        <file>assets/icons/WindowsLogo.svg</file>
+        <file>assets/icons/DuktoMetroIcon.svg</file>
+        <file>assets/icons/file-fill.svg</file>
+        <file>assets/icons/folder-fill.svg</file>
+        <file>assets/icons/AndroidLogo.png</file>
+        <file>assets/icons/BlackberryLogo.png</file>
+        <file>assets/icons/IosLogo.png</file>
+        <file>assets/icons/LinuxLogo.png</file>
+        <file>assets/icons/SymbianLogo.png</file>
+        <file>assets/icons/UnknownLogo.png</file>
+        <file>assets/icons/WindowsPhoneLogo.png</file>
+        <file>assets/icons/IpLogo.png</file>
+        <file>assets/icons/PcLogo.png</file>
+        <file>assets/icons/SmartphoneLogo.png</file>
     </qresource>
 </RCC>

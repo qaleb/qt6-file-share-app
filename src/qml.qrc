@@ -20,5 +20,6 @@
         <file>qml/SBPicker.qml</file>
         <file>qml/Button.qml</file>
         <file>qml/ButtonDark.qml</file>
+        <file>qml/FileFolderDialog.qml</file>
     </qresource>
 </RCC>

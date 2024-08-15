@@ -52,10 +52,16 @@ Flipable {
                 Image {
                     id: buddyGenericImage
                     anchors.fill: parent
+                    sourceSize.width: parent.width
+                    fillMode: Image.PreserveAspectFit
+                    anchors.margins: 5
                 }
                 Image {
                     id: buddyAvatarImage
                     anchors.fill: parent
+                    sourceSize.width: parent.width
+                    fillMode: Image.PreserveAspectFit
+                    anchors.margins: 5
                     smooth: true
                 }
             }

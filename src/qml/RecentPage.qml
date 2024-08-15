@@ -8,7 +8,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: "#fff"
+        color: theme.color6
     }
 
     SmoothText {

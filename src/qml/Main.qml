@@ -6,12 +6,21 @@ ApplicationWindow {
     width: 360
     height: 600
     visible: true
-    color: "#ffffff"
+    color: theme.color6
     maximumHeight: 600
     maximumWidth: 360
     minimumHeight: 600
     minimumWidth: 360
     title: qsTr("DropIt")
+
+    Component.onCompleted: {
+        var rect = guiBehind.windowGeometry();
+        // Apply x and y position only on desktop platforms
+        if (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx") {
+            x = rect.x;
+            y = rect.y;
+        }
+    }
 
     signal showIpList()
     signal showSettings()
@@ -144,16 +153,12 @@ ApplicationWindow {
         } else {
             close.accepted = true
         }
+
+        saveWindowGeometry();
     }
 
-
-    // theme.color1: #000000
-    // theme.color2: #248b00
-    // theme.color3: #4cb328
-    // theme.color4: #555555
-    // theme.color5: #888888
-    // theme.color6: #ffffff
-    // theme.color7: #cccccc
-    // theme.color8: #eeeeee
-    // theme.color9: #ccffffff
+    function saveWindowGeometry() {
+        var rect = Qt.rect(rootWindow.x, rootWindow.y, rootWindow.width, rootWindow.height);
+        guiBehind.setWindowGeometry(rect);
+    }
 }

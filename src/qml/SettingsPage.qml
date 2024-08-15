@@ -1,9 +1,11 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Dialogs
 
 Rectangle {
     id: settingsPage
     color: theme.color6
+    focus: true
 
     signal back()
 
@@ -19,7 +21,7 @@ Rectangle {
         id: backIcon
         sourceSize.width: 40
         sourceSize.height: 40
-        source: "qrc:/assets/icons/ArrowBack.png"
+        source: "qrc:/assets/icons/ArrowBack.svg"
         color: "gray"
         anchors.top: parent.top
         anchors.left: parent.left
@@ -87,8 +89,7 @@ Rectangle {
             verticalAlignment: "AlignVCenter"
             elide: "ElideMiddle"
             font.pixelSize: 12
-            text: "/home/path/to/folder"
-            // text: guiBehind.currentPath
+            text: guiBehind.currentPath // Display the current path
         }
     }
 
@@ -99,7 +100,17 @@ Rectangle {
         anchors.top: textPath.bottom
         anchors.topMargin: 10
         label: qsTr("Change folder")
-        // onClicked: guiBehind.changeDestinationFolder()
+        onClicked: folderDialog.open()  // Open the FileDialog
+    }
+
+    FolderDialog {
+        id: folderDialog
+        title: qsTr("Change Folder")
+        options: FolderDialog.ShowDirsOnly
+        currentFolder: guiBehind.currentPath
+        onAccepted: {
+            guiBehind.changeDestinationFolder(folderDialog.selectedFolder);
+        }
     }
 
     SText {

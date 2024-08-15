@@ -48,8 +48,8 @@ void Settings::saveWindowGeometry(QByteArray geo)
 
 void Settings::saveWindowGeometry(QRect geo)
 {
-    QRect staticRect(geo.left(), geo.top()+30, 360, 600);
-    mSettings.setValue("WindowPosAndSize", staticRect);
+    // QRect staticRect(geo.left(), geo.top(), 360, 600);
+    mSettings.setValue("WindowPosAndSize", geo);
     mSettings.sync();
 }
 

@@ -52,8 +52,8 @@ Rectangle {
             id: backIcon
             sourceSize.width: 40
             sourceSize.height: 40
-            source: "qrc:/assets/icons/ArrowBack.png"
-            color: "#fff"
+            source: "qrc:/assets/icons/ArrowBack.svg"
+            color: theme.color6
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.topMargin: 5

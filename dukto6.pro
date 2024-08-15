@@ -1,14 +1,21 @@
 QT += quick
 QT += core5compat
+# QT += widgets
+QT += core
+Qt += core-private
 
 VERSION = 6.2024.01.01
 # Define the preprocessor macro to get the application version in our application.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 SOURCES += \
+    src/buddylistitemmodel.cpp \
+    src/destinationbuddy.cpp \
+    src/duktoprotocol.cpp \
     src/guibehind.cpp \
     src/ipaddressitemmodel.cpp \
     src/main.cpp \
+    src/miniwebserver.cpp \
     src/platform.cpp \
     src/settings.cpp \
     src/theme.cpp \
@@ -38,8 +45,13 @@ DISTFILES += \
     src/assets/icons/MoreIcon.svg
 
 HEADERS += \
+    src/buddylistitemmodel.h \
+    src/destinationbuddy.h \
+    src/duktoprotocol.h \
     src/guibehind.h \
     src/ipaddressitemmodel.h \
+    src/miniwebserver.h \
+    src/peer.h \
     src/platform.h \
     src/settings.h \
     src/theme.h \
