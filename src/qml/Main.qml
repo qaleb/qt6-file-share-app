@@ -21,6 +21,17 @@ ApplicationWindow {
             x = rect.x;
             y = rect.y;
         }
+
+        // Connect the signal emitted from guiBehind
+        guiBehind.onTransferStart.connect(() => handleOverlayState("progress"));
+        guiBehind.onReceiveCompleted.connect(() => {
+                                                 handleOverlayState("");
+                                                 duktoInner.handleTabClick("recent");
+                                             });
+        guiBehind.onGotoTextSnippet.connect(() => handleOverlayState("showtext"));
+        guiBehind.onGotoSendPage.connect(() => handleOverlayState("send"));
+        guiBehind.onGotoMessagePage.connect(() => handleOverlayState("message"));
+        guiBehind.onHideAllOverlays.connect(() => handleOverlayState(""));
     }
 
     signal showIpList()
@@ -41,58 +52,20 @@ ApplicationWindow {
         source: "qrc:/assets/fonts/KGLikeASkyscraper.ttf"
     }
 
-    TopTabBar {
-        id: topTabBar
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        onClicked: (tab) => handleTabClick(tab)
+    DuktoInner {
+        id: duktoInner
+        anchors.fill: parent
+        onShowIpList: handleOverlayState("ip")
+        onShowSettings: {
+            duktoOverlay.refreshSettingsColor();
+            handleOverlayState("settings")
+        }
     }
 
-    SwipeView {
-        id: swipeView
-        anchors.top: topTabBar.bottom
-        anchors.left: parent.left
+    UpdatesBox {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-
-        Page {
-            Loader {
-                id: buddiesPage
-                anchors.fill: parent
-                source: "BuddiesPage.qml"
-            }
-        }
-
-        Page {
-            Loader {
-                anchors.fill: parent
-                source: "RecentPage.qml"
-            }
-        }
-
-        Page {
-            Loader {
-                anchors.fill: parent
-                source: "AboutPage.qml"
-            }
-        }
-
-        Component.onCompleted: {
-            contentItem.highlightMoveDuration = 600 // Set the moving time to 600 ms
-            contentItem.highlightMoveVelocity = 10
-        }
-
-        onCurrentIndexChanged: handleSwipeViewIndexChanged(swipeView.currentIndex)
-    }
-
-    BottomToolBar {
-        id: bottomToolBar
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        onShowIpList: handleBottomToolBarClick("ip")
-        onShowSettings: handleBottomToolBarClick("settings")
+        anchors.bottomMargin: 100
     }
 
     DuktoOverlay {
@@ -100,66 +73,31 @@ ApplicationWindow {
         anchors.fill: parent
     }
 
+    Binding {
+        target: guiBehind
+        property: "overlayState"
+        value: duktoOverlay.state
+    }
+
     // JavaScript functions
-    function handleTabClick(tab) {
-        if (tab === "buddies") {
-            swipeView.currentIndex = 0;
-        } else if (tab === "recent") {
-            swipeView.currentIndex = 1;
-        } else if (tab === "about") {
-            swipeView.currentIndex = 2;
-        }
+    function handleOverlayState(command) {
+        duktoOverlay.state = command;
     }
 
-    function handleSwipeViewIndexChanged(currentIndex) {
-        if (currentIndex === 0) {
-            topTabBar.state = "buddies";
-        } else if (currentIndex === 1) {
-            topTabBar.state = "recent";
-        } else if (currentIndex === 2) {
-            topTabBar.state = "about";
-        }
-    }
-
-    function handleBottomToolBarClick(command) {
-        if (command === "ip") {
-            duktoOverlay.state = "ip";
-        } else if (command === "settings") {
-            duktoOverlay.state = "settings";
-        }
-    }
-
-    function handleCloseRequest() {
-        // Manages Android Back-button
-        if (Qt.platform.os === "android") {
-            if (duktoOverlay.state !== "") {
-                duktoOverlay.state = ""
-                close.accepted = false
-            } else {
-                close.accepted = true
-            }
-        } else {
-            close.accepted = true
-        }
+    function saveWindowGeometry() {
+        var rect = Qt.rect(rootWindow.x, rootWindow.y, rootWindow.width, rootWindow.height);
+        guiBehind.setWindowGeometry(rect);
     }
 
     onClosing: function(close) {
         if (Qt.platform.os === "android") {
             if (duktoOverlay.state !== "") {
                 duktoOverlay.state = ""
-                close.accepted = false
-            } else {
-                close.accepted = true
+                return close.accepted = false
             }
-        } else {
-            close.accepted = true
         }
-
+        close.accepted = true
         saveWindowGeometry();
-    }
-
-    function saveWindowGeometry() {
-        var rect = Qt.rect(rootWindow.x, rootWindow.y, rootWindow.width, rootWindow.height);
-        guiBehind.setWindowGeometry(rect);
+        guiBehind.close();
     }
 }

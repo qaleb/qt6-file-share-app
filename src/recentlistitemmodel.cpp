@@ -36,11 +36,11 @@ void RecentListItemModel::addRecent(QString name, QString value, QString type, Q
 
     // Icon
     if (type == "text")
-        it->setData("RecentText.png", RecentListItemModel::TypeIcon);
+        it->setData("qrc:/assets/icons/RecentText.png", RecentListItemModel::TypeIcon);
     else if (type == "file")
-        it->setData("RecentFile.png", RecentListItemModel::TypeIcon);
+        it->setData("qrc:/assets/icons/RecentFile.png", RecentListItemModel::TypeIcon);
     else
-        it->setData("RecentFiles.png", RecentListItemModel::TypeIcon);
+        it->setData("qrc:/assets/icons/RecentFiles.png", RecentListItemModel::TypeIcon);
 
     if (type == "text")
         it->setData(name, RecentListItemModel::Name);

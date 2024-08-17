@@ -10,28 +10,52 @@ Rectangle {
     anchors.fill: parent
 
     property alias folder: folderModel.folder
+    property alias acceptIconVisible: bottomToolBar.acceptIconVisible
+    property alias acceptTextVisible: bottomToolBar.acceptTextVisible
+    property alias showFiles: folderModel.showFiles
 
     signal back();
 
     // Function to extract the base name from the current folder
     function extractBaseName(folderPath) {
         if (folderPath) {
-            var pathString = folderPath.toString(); // Ensure the path is a string
+            var pathString = folderPath.toString(); // Convert once here
             var parts = pathString.split("/");
+            if (parts.length === 0 || pathString === "file:///storage/emulated/0" || parts[parts.length - 1] === "0") {
+                return "/";
+            }
             return parts[parts.length - 1];
         }
-        return "";
+        return "/";
+    }
+
+    // Function to construct the path for the currentPathText
+    function constructCurrentPath(folderPath) {
+        if (folderPath) {
+            var pathString = folderPath.toString();
+            var baseIndex = pathString.indexOf("/storage/emulated/0");
+            if (baseIndex !== -1) {
+                return pathString.substring(baseIndex + "/storage/emulated/0".length);
+            }
+        }
+        return "/";
     }
 
     // Function to go up one folder level
     function navigateUpFolder() {
-        if (folderModel.folder && folderModel.folder !== "/") {
+        if (folderModel.folder && folderModel.folder !== "file:///storage/emulated/0") {
             var newPath = folderModel.folder.toString().split("/");
+            if (newPath[newPath.length - 1] === "0") {
+                return ; // Already at the root folder
+            }
             newPath.pop();
-            folderModel.folder = newPath.join("/") || "/"; // Handle empty path
+            var newFolder = newPath.join("/") || "file:///storage/emulated/0"; // Handle empty path
+
+            folderModel.folder = newFolder;
             dialogTitle.text = extractBaseName(folderModel.folder);
-            currentPathText.text = folderModel.folder;
+            currentPathText.text = constructCurrentPath(folderModel.folder);
         }
+        return "/";
     }
 
     // Title and Current Path Display
@@ -45,6 +69,7 @@ Rectangle {
             right: parent.right
             rightMargin: 15
         }
+        elide: "ElideMiddle"
         font.pixelSize: 64
         text: extractBaseName(folderModel.folder) // Set the title to the base name
         color: theme.color3
@@ -60,7 +85,8 @@ Rectangle {
             right: parent.right
             rightMargin: 15
         }
-        text: folderModel.folder
+        elide: "ElideMiddle"
+        text: constructCurrentPath(folderModel.folder)
         font.pixelSize: 16
         color: theme.color1
     }
@@ -94,12 +120,12 @@ Rectangle {
                 font.pixelSize: 18
                 icon.source: folderModel.isFolder(index) ? "qrc:/assets/icons/folder-fill.svg" : "qrc:/assets/icons/file-fill.svg"
                 onClicked: {
-                    dialogTitle.text = fileBaseName;
-                    currentPathText.text = filePath;
                     if (folderModel.isFolder(index)) {
-                        folderModel.folder += "/" + fileName
+                        folderModel.folder += "/" + fileName;
+                        dialogTitle.text = extractBaseName(folderModel.folder);
+                        currentPathText.text = constructCurrentPath(folderModel.folder);
                     } else {
-                        fileFolderDialog.selectedFolderUrl = folderModel.folder + "/" + fileName
+                        fileFolderDialog.selectedFolderUrl = folderModel.folder + "/" + fileName;
                     }
                 }
             }
@@ -113,13 +139,14 @@ Rectangle {
         anchors.right: parent.right
         onBack: fileFolderDialog.back()
         onAcceptFolder: {
-            guiBehind.changeDestinationFolder(currentPathText.text);
+            guiBehind.changeDestinationFolder(folderModel.folder);
             fileFolderDialog.back()
         }
 
         onGoUpFolder: {
             navigateUpFolder(); // Call the function to go up one folder level
         }
-        visible: true
+        acceptIconVisible: true
+        acceptTextVisible: true
     }
 }

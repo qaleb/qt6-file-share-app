@@ -22,5 +22,12 @@
         <file>qml/ButtonDark.qml</file>
         <file>qml/FileFolderDialog.qml</file>
         <file>qml/DialogNavBar.qml</file>
+        <file>qml/SendPage.qml</file>
+        <file>qml/ShowTextPage.qml</file>
+        <file>qml/DuktoInner.qml</file>
+        <file>qml/UpdatesBox.qml</file>
+        <file>qml/ProgressPage.qml</file>
+        <file>qml/MessagePage.qml</file>
+        <file>qml/TermsPage.qml</file>
     </qresource>
 </RCC>

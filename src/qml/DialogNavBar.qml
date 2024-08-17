@@ -14,6 +14,9 @@ Item {
     signal acceptFolder()
     signal goUpFolder()
 
+    property alias acceptIconVisible: acceptIcon.visible
+    property alias acceptTextVisible: acceptText.visible
+
     Image {
         source: "qrc:/assets/icons/BottomShadow.png"
         anchors.top: parent.top
@@ -77,9 +80,11 @@ Item {
                 anchors.fill: parent
                 onClicked: acceptFolder();
             }
+            visible: true
         }
 
         Text {
+            id: acceptText
             anchors {
                 top: acceptIcon.bottom
                 topMargin: 3
@@ -91,6 +96,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             width: 1
             color: theme.color6
+            visible: true
         }
 
         IconImage {

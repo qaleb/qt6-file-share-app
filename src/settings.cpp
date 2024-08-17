@@ -25,6 +25,11 @@ QString Settings::currentPath()
     if ((path != "") && (QDir(path).exists()))
         return path;
 
+#if defined(Q_OS_ANDROID)
+    path = "/sdcard/Download";
+    return path;
+#endif
+
     // Else return the default path for this platform
     path = Platform::getDefaultPath();
     if (QDir(path).exists())
@@ -88,7 +93,13 @@ bool Settings::showTermsOnStart()
 QString Settings::buddyName()
 {
     // Retrieve the last saved name (if any)
-    return mSettings.value("BuddyName", "").toString();
+    QString buddyName = mSettings.value("BuddyName", "").toString();
+
+    if (buddyName.isEmpty()) {
+        return Platform::getHostname();
+    }
+
+    return buddyName;
 }
 
 void Settings::saveBuddyName(QString name)

@@ -3,13 +3,22 @@
 
 #include <QDebug>
 #include <QQmlContext>
+#include <QQuickView>
+#include <QQmlProperty>
 #include <QDir>
 #include <QDesktopServices>
 #include <QRandomGenerator>
 #include <QStandardPaths>
-
+#include <QRegularExpression>
+#include <QThread>
+#include <QTemporaryFile>
 #include <QTimer>
 #include <QTime>
+#include <QClipboard>
+#include <QFileDialog>
+#include <QApplication>
+
+#include <QGuiApplication>
 
 #if defined(Q_OS_ANDROID)
 #include <QJniObject>
@@ -20,13 +29,25 @@
 
 // The constructor is private and can only be called within the singleton instance method
 GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
-    QObject(parent), mSettings(this), mDestBuddy(NULL), mMiniWebServer(NULL)
+    QObject(parent), mShowBackTimer(NULL), mPeriodicHelloTimer(NULL), mClipboard(NULL),
+    mMiniWebServer(NULL), mSettings(this), mDestBuddy(NULL), mUpdatesChecker(NULL)
 {
     // Change current folder
     QDir::setCurrent(mSettings.currentPath());
 
     QString rootPath = QStandardPaths::standardLocations(QStandardPaths::DownloadLocation).value(0);
     qDebug() << "The general download path is:" << rootPath;
+
+    // Status variables
+    // mView->setGuiBehindReference(this);
+    setCurrentTransferProgress(0);
+    setTextSnippetSending(false);
+    setShowUpdateBanner(false);
+
+    // Clipboard object
+    mClipboard = QGuiApplication::clipboard();
+    connect(mClipboard, SIGNAL(dataChanged()), this, SLOT(clipboardChanged()));
+    clipboardChanged(); // Initial call to handle current clipboard data
 
     // Add "Me" entry
     mBuddiesList.addMeElement();
@@ -44,26 +65,27 @@ GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
     mTheme.setThemeColor(mSettings.themeColor());
 
     // Expose instances to QML context
-    engine.rootContext()->setContextProperty("theme", &mTheme);
-    engine.rootContext()->setContextProperty("guiBehind", this);
-    engine.rootContext()->setContextProperty("ipAddressesData", &mIpAddresses);
     engine.rootContext()->setContextProperty("buddiesListData", &mBuddiesList);
+    engine.rootContext()->setContextProperty("recentListData", &mRecentList);
+    engine.rootContext()->setContextProperty("ipAddressesData", &mIpAddresses);
+    engine.rootContext()->setContextProperty("guiBehind", this);
     engine.rootContext()->setContextProperty("destinationBuddy", mDestBuddy);
+    engine.rootContext()->setContextProperty("theme", &mTheme);
 
     // Register protocol signals
     connect(&mDuktoProtocol, SIGNAL(peerListAdded(Peer)), this, SLOT(peerListAdded(Peer)));
     connect(&mDuktoProtocol, SIGNAL(peerListRemoved(Peer)), this, SLOT(peerListRemoved(Peer)));
-    // connect(&mDuktoProtocol, SIGNAL(receiveFileStart(QString)), this, SLOT(receiveFileStart(QString)));
-    // connect(&mDuktoProtocol, SIGNAL(transferStatusUpdate(qint64,qint64)), this, SLOT(transferStatusUpdate(qint64,qint64)));
-    // connect(&mDuktoProtocol, SIGNAL(receiveFileComplete(QStringList*,qint64)), this, SLOT(receiveFileComplete(QStringList*,qint64)));
-    // connect(&mDuktoProtocol, SIGNAL(receiveTextComplete(QString*,qint64)), this, SLOT(receiveTextComplete(QString*,qint64)));
-    // connect(&mDuktoProtocol, SIGNAL(sendFileComplete(QStringList*)), this, SLOT(sendFileComplete(QStringList*)));
-    // connect(&mDuktoProtocol, SIGNAL(sendFileError(int)), this, SLOT(sendFileError(int)));
-    // connect(&mDuktoProtocol, SIGNAL(receiveFileCancelled()), this, SLOT(receiveFileCancelled()));
-    // connect(&mDuktoProtocol, SIGNAL(sendFileAborted()), this, SLOT(sendFileAborted()));
+    connect(&mDuktoProtocol, SIGNAL(receiveFileStart(QString)), this, SLOT(receiveFileStart(QString)));
+    connect(&mDuktoProtocol, SIGNAL(transferStatusUpdate(qint64,qint64)), this, SLOT(transferStatusUpdate(qint64,qint64)));
+    connect(&mDuktoProtocol, SIGNAL(receiveFileComplete(QStringList*,qint64)), this, SLOT(receiveFileComplete(QStringList*,qint64)));
+    connect(&mDuktoProtocol, SIGNAL(receiveTextComplete(QString*,qint64)), this, SLOT(receiveTextComplete(QString*,qint64)));
+    connect(&mDuktoProtocol, SIGNAL(sendFileComplete(QStringList*)), this, SLOT(sendFileComplete(QStringList*)));
+    connect(&mDuktoProtocol, SIGNAL(sendFileError(int)), this, SLOT(sendFileError(int)));
+    connect(&mDuktoProtocol, SIGNAL(receiveFileCancelled()), this, SLOT(receiveFileCancelled()));
+    connect(&mDuktoProtocol, SIGNAL(sendFileAborted()), this, SLOT(sendFileAborted()));
 
     // Register other signals
-    // connect(this, SIGNAL(remoteDestinationAddressChanged()), this, SLOT(remoteDestinationAddressHandler()));
+    connect(this, SIGNAL(remoteDestinationAddressChanged()), this, SLOT(remoteDestinationAddressHandler()));
 
     // Say "hello"
     mDuktoProtocol.setPorts(NETWORK_PORT, NETWORK_PORT);
@@ -72,58 +94,30 @@ GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
 
     // Periodic "hello" timer
     mPeriodicHelloTimer = new QTimer(this);
-    // connect(mPeriodicHelloTimer, SIGNAL(timeout()), this, SLOT(periodicHello()));
+    connect(mPeriodicHelloTimer, SIGNAL(timeout()), this, SLOT(periodicHello()));
     mPeriodicHelloTimer->start(60000);
+
+    // Start random rotate
+    mShowBackTimer = new QTimer(this);
+    connect(mShowBackTimer, SIGNAL(timeout()), this, SLOT(showRandomBack()));
+    uint iSeed = QDateTime::currentDateTime().toSecsSinceEpoch();
+    srand(iSeed);
+    mShowBackTimer->start(10000);
+
+    // Enqueue check for updates
+    mUpdatesChecker = new UpdatesChecker();
+    connect(mUpdatesChecker, SIGNAL(updatesAvailable()), this, SLOT(showUpdatesMessage()));
+    QTimer::singleShot(2000, mUpdatesChecker, SLOT(start()));
 }
 
-void GuiBehind::changeThemeColor(QString color)
+QRect GuiBehind::windowGeometry()
 {
-    mTheme.setThemeColor(color);
-    mSettings.saveThemeColor(color);
+    return mSettings.windowRect();
 }
 
-QString GuiBehind::getCurrentThemeColor()
+void GuiBehind::setWindowGeometry(QRect geo)
 {
-    return mSettings.themeColor();
-}
-
-void GuiBehind::refreshIpList()
-{
-    mIpAddresses.refreshIpList();
-}
-
-QString GuiBehind::currentPath()
-{
-    return mSettings.currentPath();
-}
-
-void GuiBehind::setCurrentPath(QString path)
-{
-    if (path == mSettings.currentPath()) return;
-    mSettings.savePath(path);
-    emit currentPathChanged();
-}
-
-void GuiBehind::changeDestinationFolder(QString dirpath)
-{
-    // Convert URL to local file path
-    QUrl url(dirpath);
-    if (url.isLocalFile()) {
-        dirpath = url.toLocalFile();
-    }
-
-    if (dirpath.isEmpty()) return;
-
-    // Set the new folder as current
-    QDir::setCurrent(dirpath);
-
-    // Save the new setting
-    setCurrentPath(dirpath);
-}
-
-void GuiBehind::openDestinationFolder()
-{
-    QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::currentPath()));
+    mSettings.saveWindowGeometry(geo);
 }
 
 // Add the new buddy to the buddy list
@@ -159,28 +153,578 @@ void GuiBehind::showRandomBack()
     if (i < mBuddiesList.rowCount()) mBuddiesList.showSingleBack(i);
 }
 
-void GuiBehind::setBuddyName(QString name)
+void GuiBehind::clipboardChanged()
 {
-    qDebug() << "Buddy name is:  " << name;
-    mSettings.saveBuddyName(name.replace(' ', ""));
-    mDuktoProtocol.updateBuddyName();
-    mBuddiesList.updateMeElement();
-    emit buddyNameChanged();
+    mClipboardTextAvailable = (mClipboard->text() != "");
+    emit clipboardTextAvailableChanged();
 }
 
-QRect GuiBehind::windowGeometry()
+void GuiBehind::receiveFileStart(QString senderIp)
 {
-    return mSettings.windowRect();
+    // Look for the sender in the buddy list
+    QString sender = mBuddiesList.buddyNameByIp(senderIp);
+    if (sender == "")
+        setCurrentTransferBuddy("remote sender");
+    else
+        setCurrentTransferBuddy(sender);
+
+    // Update user interface
+    setCurrentTransferSending(false);
+    // mView->win7()->setProgressValue(0, 100);
+    // mView->win7()->setProgressState(EcWin7::Normal);
+
+    emit transferStart();
 }
 
-void GuiBehind::setWindowGeometry(QRect geo)
+void GuiBehind::transferStatusUpdate(qint64 total, qint64 partial)
 {
-    mSettings.saveWindowGeometry(geo);
+    // Stats formatting
+    if (total < 1024)
+        setCurrentTransferStats(QString::number(partial) + " B of " + QString::number(total) + " B");
+    else if (total < 1048576)
+        setCurrentTransferStats(QString::number(partial * 1.0 / 1024, 'f', 1) + " KB of " + QString::number(total * 1.0 / 1024, 'f', 1) + " KB");
+    else
+        setCurrentTransferStats(QString::number(partial * 1.0 / 1048576, 'f', 1) + " MB of " + QString::number(total * 1.0 / 1048576, 'f', 1) + " MB");
+
+    double percent = partial * 1.0 / total * 100;
+    setCurrentTransferProgress(percent);
+
+    // mView->win7()->setProgressValue(percent, 100);
 }
 
-QString GuiBehind::buddyName()
+void GuiBehind::receiveFileComplete(QStringList *files, qint64 totalSize) {
+
+    // Add an entry to recent activities
+    QDir d(".");
+    if (files->size() == 1)
+        mRecentList.addRecent(files->at(0), d.absoluteFilePath(files->at(0)), "file", mCurrentTransferBuddy, totalSize);
+    else
+        mRecentList.addRecent(tr("Files and folders"), d.absolutePath(), "misc", mCurrentTransferBuddy, totalSize);
+
+// Update GUI
+// mView->win7()->setProgressState(EcWin7::NoProgress);
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    //TODO: check QtQuick 2 alert
+    QApplication::alert(mView, 5000);
+#endif
+    emit receiveCompleted();
+}
+
+void GuiBehind::receiveTextComplete(QString *text, qint64 totalSize)
 {
-    return mSettings.buddyName();
+    // Add an entry to recent activities
+    mRecentList.addRecent(tr("Text snippet"), *text, "text", mCurrentTransferBuddy, totalSize);
+
+// Update GUI
+// mView->win7()->setProgressState(EcWin7::NoProgress);
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    //TODO: check QtQuick 2 alert
+    QApplication::alert(mView, 5000);
+#endif
+    emit receiveCompleted();
+}
+
+void GuiBehind::showTextSnippet(QString text, QString sender)
+{
+    setTextSnippet(text);
+    setTextSnippetBuddy(sender);
+    setTextSnippetSending(false);
+    emit gotoTextSnippet();
+}
+
+void GuiBehind::openFile(QString path)
+{
+    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+void GuiBehind::openDestinationFolder() {
+#if defined(Q_OS_ANDROID)
+    // Check for a file manager app (optional)
+    QJniObject intent("android/content/Intent", "(Ljava/lang/String;)V",
+                      QJniObject::getStaticObjectField("android/content/Intent",
+                                                       "ACTION_VIEW",
+                                                       "Ljava/lang/String;").object<jstring>());
+
+    // Convert QUrl to jstring
+    QString urlString = QUrl::fromLocalFile(currentPath()).toString();
+    QJniObject jurlString = QJniObject::fromString(urlString);
+
+    intent.callObjectMethod("setDataAndType", "(Landroid/net/Uri;Ljava/lang/String;)Landroid/content/Intent;",
+                            QJniObject::callStaticObjectMethod("android/net/Uri",
+                                                               "parse",
+                                                               "(Ljava/lang/String;)Landroid/net/Uri;",
+                                                               jurlString.object()).object(),
+                            QJniObject::fromString("resource/folder").object<jstring>());
+
+    // Access the Android activity context directly
+    QJniObject activity = QJniObject::callStaticObjectMethod(
+        "org/qtproject/qt/android/QtNative",
+        "activity",
+        "()Landroid/app/Activity;");
+
+    // Start the activity with the intent
+    activity.callMethod<void>("startActivity", "(Landroid/content/Intent;)V", intent.object<jobject>());
+
+#else
+    QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::currentPath()));
+#endif
+}
+
+void GuiBehind::changeDestinationFolder(QString dirpath)
+{
+    // Convert URL to local file path
+    QUrl url(dirpath);
+    if (url.isLocalFile()) {
+        dirpath = url.toLocalFile();
+    }
+
+    if (dirpath.isEmpty()) return;
+
+    // Set the new folder as current
+    QDir::setCurrent(dirpath);
+
+    // Save the new setting
+    setCurrentPath(dirpath);
+}
+
+void GuiBehind::refreshIpList()
+{
+    mIpAddresses.refreshIpList();
+}
+
+void GuiBehind::showSendPage(QString ip)
+{
+    // Check for a buddy with the provided IP address
+    QStandardItem *buddy = mBuddiesList.buddyByIp(ip);
+    if (buddy == NULL) return;
+
+    // Update exposed data for the selected user
+    mDestBuddy->fillFromItem(buddy);
+
+    // Preventive update of destination buddy
+    if (mDestBuddy->ip() == "IP")
+        setCurrentTransferBuddy(remoteDestinationAddress());
+    else
+        setCurrentTransferBuddy(mDestBuddy->username());
+
+    // Preventive update of text send page
+    setTextSnippetBuddy(mDestBuddy->username());
+    setTextSnippetSending(true);
+    setTextSnippet("");
+
+    // Show send UI
+    emit gotoSendPage();
+}
+
+void GuiBehind::sendDroppedFiles(QStringList *files)
+{
+    if (files->count() == 0) return;
+
+    // Check if there's no selected buddy
+    // (but there must be only one buddy in the buddy list)
+    if (overlayState() == "")
+    {
+        if (mBuddiesList.rowCount() != 3) return;
+        showSendPage(mBuddiesList.fistBuddyIp());
+    }
+
+    // Send files
+    QStringList toSend = *files;
+    startTransfer(toSend);
+}
+
+void GuiBehind::sendBuddyDroppedFiles(const QStringList &urls)
+{
+    if (urls.isEmpty()) return;
+
+    QStringList localPaths;
+
+    foreach (const QString &url, urls) {
+        QUrl fileUrl(url);
+        if (fileUrl.isLocalFile()) {
+            localPaths.append(fileUrl.toLocalFile());
+        }
+    }
+
+    // qDebug() << localPaths;
+
+    // Send files
+    QStringList toSend = localPaths;
+    startTransfer(toSend);
+}
+
+void GuiBehind::sendSomeFiles()
+{
+    // Show file selection dialog
+    QStringList files = QFileDialog::getOpenFileNames(nullptr, tr("Send some files"));
+
+    if (files.count() == 0) return;
+    qDebug() <<"The files are:" << files;
+    // Send files
+    QStringList toSend = files;
+    startTransfer(toSend);
+}
+
+void GuiBehind::sendFolder()
+{
+    // Show folder selection dialog
+    QString dirname = QFileDialog::getExistingDirectory(nullptr, tr("Change folder"), ".",
+                                                        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    if (dirname == "") return;
+
+    // Send files
+    QStringList toSend;
+    toSend.append(dirname);
+    startTransfer(toSend);
+}
+
+void GuiBehind::sendClipboardText()
+{
+    // Get text to send
+    QString text = mClipboard->text();
+#ifndef Q_OS_S60
+    if (text == "") return;
+#else
+    if (text == "") {
+        setMessagePageTitle(tr("Send"));
+        setMessagePageText(tr("No text appears to be in the clipboard right now!"));
+        setMessagePageBackState("send");
+        emit gotoMessagePage();
+        return;
+    }
+#endif
+
+    // Send text
+    startTransfer(text);
+}
+
+void GuiBehind::sendText()
+{
+    // Get text to send
+    QString text = textSnippet();
+    if (text == "") return;
+
+    // Send text
+    startTransfer(text);
+}
+
+void GuiBehind::sendScreen()
+{
+    // Minimize window
+    // mView->setWindowState(Qt::WindowMinimized);
+
+    QTimer::singleShot(500, this, SLOT(sendScreenStage2()));
+}
+
+void GuiBehind::sendScreenStage2() {
+
+    // Screenshot
+    // QPixmap screen = QPixmap::grabWindow(QApplication::desktop()->winId());
+    QPixmap screen = QGuiApplication::primaryScreen()->grabWindow(0);
+
+    // Restore window
+    // mView->setWindowState(Qt::WindowActive);
+
+    // Salvataggio screenshot in file
+    QTemporaryFile tempFile;
+    tempFile.setAutoRemove(false);
+    tempFile.open();
+    mScreenTempPath = tempFile.fileName();
+    tempFile.close();
+    screen.save(mScreenTempPath, "JPG", 95);
+
+    // Prepare file transfer
+    QString ip;
+    qint16 port;
+    if (!prepareStartTransfer(&ip, &port)) return;
+
+    // Start screen transfer
+    mDuktoProtocol.sendScreen(ip, port, mScreenTempPath);
+}
+
+void GuiBehind::startTransfer(QStringList files)
+{
+    // Prepare file transfer
+    QString ip;
+    qint16 port;
+    if (!prepareStartTransfer(&ip, &port)) return;
+
+    // Start files transfer
+    mDuktoProtocol.sendFile(ip, port, files);
+}
+
+void GuiBehind::startTransfer(QString text)
+{
+    // Prepare file transfer
+    QString ip;
+    qint16 port;
+    if (!prepareStartTransfer(&ip, &port)) return;
+
+    // Start files transfer
+    mDuktoProtocol.sendText(ip, port, text);
+}
+
+bool GuiBehind::prepareStartTransfer(QString *ip, qint16 *port)
+{
+    // Check if it's a remote file transfer
+    if (mDestBuddy->ip() == "IP") {
+
+        // Remote transfer
+        QString dest = remoteDestinationAddress();
+
+        // Check if port is specified
+        if (dest.contains(":")) {
+
+            // Port is specified or destination is malformed...
+            static const QRegularExpression rx("^(.*):([0-9]+)$");
+            QRegularExpressionMatch match = rx.match(dest);
+            if (!match.hasMatch()) {
+
+                // Malformed destination
+                setMessagePageTitle(tr("Send"));
+                setMessagePageText(tr("Hey, take a look at your destination, it appears to be malformed!"));
+                setMessagePageBackState("send");
+                emit gotoMessagePage();
+                return false;
+            }
+
+            // Get IP (or hostname) and port
+            *ip = match.captured(1);
+            *port = match.captured(2).toInt();
+        }
+        else {
+
+            // Port not specified, using default
+            *ip = dest;
+            *port = 0;
+        }
+        setCurrentTransferBuddy(*ip);
+    }
+    else {
+
+        // Local transfer
+        *ip = mDestBuddy->ip();
+        *port = mDestBuddy->port();
+        setCurrentTransferBuddy(mDestBuddy->username());
+    }
+
+    // Update GUI for file transfer
+    setCurrentTransferSending(true);
+    setCurrentTransferStats(tr("Connecting..."));
+    setCurrentTransferProgress(0);
+    // mView->win7()->setProgressState(EcWin7::Normal);
+    // mView->win7()->setProgressValue(0, 100);
+
+    emit transferStart();
+    return true;
+}
+
+void GuiBehind::sendFileComplete(QStringList *files)
+{
+    // To remove warning
+    files = files;
+
+    // Show completed message
+    setMessagePageTitle(tr("Send"));
+#ifndef Q_OS_S60
+    setMessagePageText(tr("Your data has been sent to your buddy!\n\nDo you want to send other files to your buddy? Just drag and drop them here!"));
+#else
+    setMessagePageText(tr("Your data has been sent to your buddy!"));
+#endif
+    setMessagePageBackState("send");
+
+    // mView->win7()->setProgressState(EcWin7::NoProgress);
+
+    // Check for temporary file to delete
+    if (mScreenTempPath != "") {
+
+        QFile file(mScreenTempPath);
+        file.remove();
+        mScreenTempPath = "";
+    }
+
+    emit gotoMessagePage();
+}
+
+void GuiBehind::remoteDestinationAddressHandler()
+{
+    // Update GUI status
+    setCurrentTransferBuddy(remoteDestinationAddress());
+    setTextSnippetBuddy(remoteDestinationAddress());
+}
+
+// Returns true if the application is ready to accept
+// drag and drop for files to send
+bool GuiBehind::canAcceptDrop()
+{
+    // There must be the send page shown and,
+    // if it's a remote destination, it must have an IP
+    if (overlayState() == "send")
+        return !((mDestBuddy->ip() == "IP") && (remoteDestinationAddress() == ""));
+
+    // Or there could be a "send complete" or "send error" message relative to a
+    // determinate buddy
+    else if ((overlayState() == "message") && (messagePageBackState() == "send"))
+        return true;
+
+    // Or there could be just one buddy in the list
+    else if (mBuddiesList.rowCount() == 3)
+        return true;
+
+    return false;
+}
+
+// Handles send error
+void GuiBehind::sendFileError(int code)
+{
+    setMessagePageTitle(tr("Error"));
+    setMessagePageText(tr("Sorry, an error has occurred while sending your data...\n\nError code: ") + QString::number(code));
+    setMessagePageBackState("send");
+    // mView->win7()->setProgressState(EcWin7::Error);
+
+    // Check for temporary file to delete
+    if (mScreenTempPath != "") {
+
+        QFile file(mScreenTempPath);
+        file.remove();
+        mScreenTempPath = "";
+    }
+
+    emit gotoMessagePage();
+}
+
+// Handles receive error
+void GuiBehind::receiveFileCancelled()
+{
+    setMessagePageTitle(tr("Error"));
+    setMessagePageText(tr("An error has occurred during the transfer... The data you received could be incomplete or broken."));
+    setMessagePageBackState("");
+    // mView->win7()->setProgressState(EcWin7::Error);
+    emit gotoMessagePage();
+}
+
+// Event handler to catch the "application activate" event
+// bool GuiBehind::eventFilter(QObject *obj, QEvent *event)
+// {
+//     // On application activatio, I send a broadcast hello
+//     if (event->type() == QEvent::ApplicationActivate)
+//         mDuktoProtocol.sayHello(QHostAddress::Broadcast);
+
+//     return false;
+// }
+
+// Changes the current theme color
+
+void GuiBehind::changeThemeColor(QString color)
+{
+    mTheme.setThemeColor(color);
+    mSettings.saveThemeColor(color);
+}
+
+QString GuiBehind::getCurrentThemeColor()
+{
+    return mSettings.themeColor();
+}
+
+// Called on application closing event
+void GuiBehind::close()
+{
+    mDuktoProtocol.sayGoodbye();
+}
+
+// Reset taskbar progress status
+void GuiBehind::resetProgressStatus()
+{
+    // mView->win7()->setProgressState(EcWin7::NoProgress);
+}
+
+// Periodic hello sending
+void GuiBehind::periodicHello()
+{
+    mDuktoProtocol.sayHello(QHostAddress::Broadcast);
+}
+
+// Show updates message
+void GuiBehind::showUpdatesMessage()
+{
+    setShowUpdateBanner(true);
+}
+
+// Abort current transfer while sending data
+void GuiBehind::abortTransfer()
+{
+    mDuktoProtocol.abortCurrentTransfer();
+}
+
+// Protocol confirms that abort has been done
+void GuiBehind::sendFileAborted()
+{
+    resetProgressStatus();
+    emit gotoSendPage();
+}
+
+// ------------------------------------------------------------
+// Property setter and getter
+
+QString GuiBehind::currentTransferBuddy()
+{
+    return mCurrentTransferBuddy;
+}
+
+void GuiBehind::setCurrentTransferBuddy(QString buddy)
+{
+    if (buddy == mCurrentTransferBuddy) return;
+    mCurrentTransferBuddy = buddy;
+    emit currentTransferBuddyChanged();
+}
+
+int GuiBehind::currentTransferProgress()
+{
+    return mCurrentTransferProgress;
+}
+
+void GuiBehind::setCurrentTransferProgress(int value)
+{
+    if (value == mCurrentTransferProgress) return;
+    mCurrentTransferProgress = value;
+    emit currentTransferProgressChanged();
+}
+
+QString GuiBehind::currentTransferStats()
+{
+    return mCurrentTransferStats;
+}
+
+void GuiBehind::setCurrentTransferStats(QString stats)
+{
+    if (stats == mCurrentTransferStats) return;
+    mCurrentTransferStats = stats;
+    emit currentTransferStatsChanged();
+}
+
+QString GuiBehind::textSnippetBuddy()
+{
+    return mTextSnippetBuddy;
+}
+
+void GuiBehind::setTextSnippetBuddy(QString buddy)
+{
+    if (buddy == mTextSnippetBuddy) return;
+    mTextSnippetBuddy = buddy;
+    emit textSnippetBuddyChanged();
+}
+
+QString GuiBehind::textSnippet()
+{
+    return mTextSnippet;
+}
+
+void GuiBehind::setTextSnippet(QString text)
+{
+    if (text == mTextSnippet) return;
+    mTextSnippet = text;
+    emit textSnippetChanged();
 }
 
 bool GuiBehind::textSnippetSending()
@@ -195,6 +739,47 @@ void GuiBehind::setTextSnippetSending(bool sending)
     emit textSnippetSendingChanged();
 }
 
+QString GuiBehind::currentPath()
+{
+    return mSettings.currentPath();
+}
+
+void GuiBehind::setCurrentPath(QString path)
+{
+    if (path == mSettings.currentPath()) return;
+    mSettings.savePath(path);
+    emit currentPathChanged();
+}
+
+bool GuiBehind::currentTransferSending()
+{
+    return mCurrentTransferSending;
+}
+
+void GuiBehind::setCurrentTransferSending(bool sending)
+{
+    if (sending == mCurrentTransferSending) return;
+    mCurrentTransferSending = sending;
+    emit currentTransferSendingChanged();
+}
+
+bool GuiBehind::clipboardTextAvailable()
+{
+    return mClipboardTextAvailable;
+}
+
+QString GuiBehind::remoteDestinationAddress()
+{
+    return mRemoteDestinationAddress;
+}
+
+void GuiBehind::setRemoteDestinationAddress(QString address)
+{
+    if (address == mRemoteDestinationAddress) return;
+    mRemoteDestinationAddress = address;
+    emit remoteDestinationAddressChanged();
+}
+
 QString GuiBehind::overlayState()
 {
     return mOverlayState;
@@ -207,6 +792,30 @@ void GuiBehind::setOverlayState(QString state)
     emit overlayStateChanged();
 }
 
+QString GuiBehind::messagePageText()
+{
+    return mMessagePageText;
+}
+
+void GuiBehind::setMessagePageText(QString message)
+{
+    if (message == mMessagePageText) return;
+    mMessagePageText = message;
+    emit messagePageTextChanged();
+}
+
+QString GuiBehind::messagePageTitle()
+{
+    return mMessagePageTitle;
+}
+
+void GuiBehind::setMessagePageTitle(QString title)
+{
+    if (title == mMessagePageTitle) return;
+    mMessagePageTitle = title;
+    emit messagePageTitleChanged();
+}
+
 QString GuiBehind::messagePageBackState()
 {
     return mMessagePageBackState;
@@ -217,4 +826,156 @@ void GuiBehind::setMessagePageBackState(QString state)
     if (state == mMessagePageBackState) return;
     mMessagePageBackState = state;
     emit messagePageBackStateChanged();
+}
+
+bool GuiBehind::showTermsOnStart()
+{
+    return mSettings.showTermsOnStart();
+}
+
+void GuiBehind::setShowTermsOnStart(bool show)
+{
+    mSettings.saveShowTermsOnStart(show);
+    emit showTermsOnStartChanged();
+}
+
+bool GuiBehind::showUpdateBanner()
+{
+    return mShowUpdateBanner;
+}
+
+void GuiBehind::setShowUpdateBanner(bool show)
+{
+    mShowUpdateBanner = show;
+    emit showUpdateBannerChanged();
+}
+
+void GuiBehind::setBuddyName(QString name)
+{
+    qDebug() << "Buddy name is:  " << name;
+    mSettings.saveBuddyName(name.replace(' ', ""));
+    mDuktoProtocol.updateBuddyName();
+    mBuddiesList.updateMeElement();
+    emit buddyNameChanged();
+}
+
+QString GuiBehind::buddyName()
+{
+    return mSettings.buddyName();
+}
+
+QString GuiBehind::appVersion()
+{
+    return QGuiApplication::applicationVersion();
+}
+
+bool GuiBehind::isTrayIconVisible()
+{
+    if (QSystemTrayIcon::isSystemTrayAvailable()){
+        return trayIcon->isVisible();
+    }
+    return false;
+}
+
+void GuiBehind::setTrayIconVisible(bool bVisible)
+{
+    if (QSystemTrayIcon::isSystemTrayAvailable()){
+        trayIcon->setVisible(bVisible);
+    }
+}
+
+#if defined(Q_OS_S60)
+void GuiBehind::initConnection()
+{
+    // Connection
+    QNetworkConfigurationManager manager;
+    const bool canStartIAP = (manager.capabilities() & QNetworkConfigurationManager::CanStartAndStopInterfaces);
+    QNetworkConfiguration cfg = manager.defaultConfiguration();
+    if (!cfg.isValid() || (!canStartIAP && cfg.state() != QNetworkConfiguration::Active)) return;
+    mNetworkSession = new QNetworkSession(cfg, this);
+    connect(mNetworkSession, SIGNAL(opened()), this, SLOT(connectOpened()));
+    connect(mNetworkSession, SIGNAL(error(QNetworkSession::SessionError)), this, SLOT(connectError(QNetworkSession::SessionError)));
+    mNetworkSession->open();
+}
+
+void GuiBehind::connectOpened()
+{
+    mDuktoProtocol.sayHello(QHostAddress::Broadcast);
+}
+
+void GuiBehind::connectError(QNetworkSession::SessionError error)
+{
+    QString msg = tr("Unable to connect to the network (code: ") + QString::number(error) + ").";
+    QMessageBox::critical(NULL, tr("Dukto"), msg);
+    exit(-1);
+}
+
+#endif
+
+void GuiBehind::createActions()
+{
+    // minimizeAction = new QAction(tr("Mi&nimize"), mView);
+    // connect(minimizeAction, SIGNAL(triggered()), mView, SLOT(hide()));
+
+    // maximizeAction = new QAction(tr("Ma&ximize"), mView);
+    // connect(maximizeAction, SIGNAL(triggered()), mView, SLOT(showMaximized()));
+
+    // restoreAction = new QAction(tr("&Restore"), mView);
+    // connect(restoreAction, SIGNAL(triggered()), mView, SLOT(showNormal()));
+
+    // quitAction = new QAction(tr("&Quit"), mView);
+    // connect(quitAction, SIGNAL(triggered()), mView, SLOT(exit()));
+}
+
+void GuiBehind::createTrayIcon()
+{
+    #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+        trayIconMenu = new QMenu(mView);
+    #else
+        trayIconMenu = new QMenu(nullptr);
+    #endif
+        // trayIconMenu->addAction(minimizeAction);
+        // //    trayIconMenu->addAction(maximizeAction);
+        // trayIconMenu->addAction(restoreAction);
+        // trayIconMenu->addSeparator();
+        // trayIconMenu->addAction(quitAction);
+
+        // trayIcon = new QSystemTrayIcon(mView);
+        // trayIcon->setContextMenu(trayIconMenu);
+        // QIcon icon(":/dukto.png");
+        // trayIcon->setIcon(icon);
+        // //trayIcon->setToolTip("test");
+        // connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
+        //         this, SLOT(iconActivated(QSystemTrayIcon::ActivationReason)));
+
+}
+
+void GuiBehind::iconActivated(QSystemTrayIcon::ActivationReason reason)
+{
+        switch (reason) {
+        case QSystemTrayIcon::Trigger:
+            //single left click
+    #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+            // qDebug() << "//TODO:QT5 single left click on systray icon";
+            // if (mView->isVisible() || mView->windowState() == Qt::WindowMinimized) {
+            //     mView->showNormal(); // Restore the application if it is hidden
+            // } else {
+            //     mView->hide();
+            // }
+    #else
+            if (mView->isHidden() || mView->isMinimized()) {
+                mView->showNormal();
+            } else {
+                mView->hide();
+            }
+    #endif
+            break;
+        case QSystemTrayIcon::DoubleClick:
+            //double click
+            break;
+        case QSystemTrayIcon::MiddleClick:
+            break;
+        default:
+            ;
+        }
 }

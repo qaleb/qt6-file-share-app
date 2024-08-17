@@ -38,6 +38,10 @@ QTM_USE_NAMESPACE
 #define SYMBIAN
 #endif
 
+#if defined(Q_OS_ANDROID)
+#include <QJniObject>
+#endif
+
 #include "settings.h"
     QString Platform::username = "";
 
@@ -145,6 +149,11 @@ QString Platform::getHostname()
     QSystemDeviceInfo info;
     hostname = info.model();
 
+#elif defined(Q_OS_ANDROID)
+    // Access the Build.MODEL field to get the device model name
+    QJniObject model = QJniObject::getStaticObjectField<jstring>("android/os/Build", "MODEL");
+    hostname = model.toString();
+    qDebug() << "The hostname is" << hostname;
 #else
 
     // Get the hostname
@@ -235,6 +244,8 @@ QString Platform::getAndroidAvatarPath()
 #if defined(Q_OS_UNIX)
 // Special function for Linux
 QString Platform::getLinuxAvatarPath() {
+    static QRegularExpression re("^Icon=(.*)$"); // Declare static QRegularExpression object
+
     QString path;
 
     // Gnome2 check
@@ -251,10 +262,9 @@ QString Platform::getLinuxAvatarPath() {
         line = ts.readLine();
         if (line.isNull()) break;
         if (line.startsWith("Icon=")) {
-            QRegularExpression re("^Icon=(.*)$");
-            QRegularExpressionMatch match = re.match(line); // Perform the match
+            QRegularExpressionMatch match = re.match(line); // Use the static object
             if (match.hasMatch()) {
-                QStringList pathlist = match.capturedTexts(); // Use capturedTexts on the match
+                QStringList pathlist = match.capturedTexts();
                 path = pathlist[1];
                 found = true;
                 break;

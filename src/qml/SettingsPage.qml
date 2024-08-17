@@ -8,8 +8,9 @@ Rectangle {
     focus: true
 
     onVisibleChanged: {
+        mainArea.forceActiveFocus();
         if (visible) {
-            settingsPage.state = "";
+            state = "";
         }
     }
 
@@ -19,8 +20,19 @@ Rectangle {
         picker.setColor(theme.color2);
     }
 
+    // Function to construct the path for the currentPathText
+    function constructCurrentPath(folderPath) {
+        if (folderPath.startsWith("/storage/emulated/0")) {
+            return folderPath.substring(19) // Remove the prefix
+        } else {
+            return folderPath;
+        }
+    }
+
     MouseArea {
+        id: mainArea
         anchors.fill: parent
+        onClicked: forceActiveFocus() // To remove focus from textInputs when user clicks outside
     }
 
     IconImage {
@@ -95,7 +107,7 @@ Rectangle {
             verticalAlignment: "AlignVCenter"
             elide: "ElideMiddle"
             font.pixelSize: 12
-            text: guiBehind.currentPath // Display the current path
+            text: constructCurrentPath(guiBehind.currentPath) // Display the current path
         }
     }
 
@@ -109,7 +121,7 @@ Rectangle {
         // onClicked: folderDialog.open()  // Open the FileDialog
         onClicked: {
             if (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx") {
-                folderDialog.open()
+                folderDialog.open();
             } else {
                 settingsPage.state = "showDialog";  // Open the FileDialog
             }
@@ -342,10 +354,11 @@ Rectangle {
         opacity: 0
         visible: false
         onBack: parent.state = ""
-        // folder: guiBehind.currentPath // Display the current path
-        // folder: "/sdcard/Dukto"
+        folder: guiBehind.currentPath // Display the current path
+        acceptIconVisible: true
+        acceptTextVisible: true
+        showFiles: false
         // nameFilters: ""
-        // showFiles: ""
         // fileUrl: ""
     }
 

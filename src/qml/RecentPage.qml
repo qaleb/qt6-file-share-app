@@ -18,7 +18,7 @@ Item {
         anchors.top: parent.top
         font.pixelSize: 160
         text: ":-("
-        color: "#555555"
+        color: theme.color4
         visible: (recentList.count === 0)
     }
 
@@ -28,23 +28,17 @@ Item {
         anchors.left: parent.left
         anchors.leftMargin: 40
         font.pixelSize: 17
-        color: "#555555"
+        color: theme.color4
         text: qsTr("Sorry, no data has been\nreceived yet...")
         visible: (recentList.count === 0)
     }
-
-    // ListModel {
-    //     id: recentListData
-    //     ListElement {}
-    //     // Add more ListElements as needed
-    // }
 
     ListView {
         id: recentList
         anchors.fill: parent
         spacing: 10
         anchors.leftMargin: 25
-        // model: recentListData // EsempioRecent {}
+        model: recentListData // EsempioRecent {}
 
         Component {
             id: recentDelegate
@@ -59,9 +53,9 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     onClicked: {
-                        if (type === "text")
+                        if (type == "text")
                             guiBehind.showTextSnippet(value, sender);
-                        else if (type === "file")
+                        else if (type == "file")
                             guiBehind.openFile(value);
                     }
                 }
@@ -75,7 +69,7 @@ Item {
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
                         width: 5
-                        color: "#4cb328"
+                        color: theme.color3
                     }
                 }
 
@@ -84,7 +78,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 32
                     height: 32
-                    color: "#248b00"
+                    color: theme.color2
                     Image {
                         source: typeIcon
                         width: 32
@@ -100,7 +94,7 @@ Item {
                     anchors.right: parent.right
                     anchors.rightMargin: 20
                     font.pixelSize: 14
-                    color: "#555555"
+                    color: theme.color4
                     elide: "ElideRight"
                     text: name
                 }
@@ -113,7 +107,7 @@ Item {
                     anchors.bottomMargin: -1
                     font.pixelSize: 12
                     elide: "ElideRight"
-                    color: "#888888"
+                    color: theme.color5
                     text: qsTr("from ") + sender + ", " + dateTime
                 }
             }

@@ -510,9 +510,9 @@ void DuktoProtocol::sendText(QString ipDest, qint16 port, QString text)
 
     // Connessione al destinatario
     mCurrentSocket = new QTcpSocket(this);
-    connect(mCurrentSocket, SIGNAL(connected()), this, SLOT(sendMetaData()), Qt::DirectConnection);
-    connect(mCurrentSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(sendConnectError(QAbstractSocket::SocketError)), Qt::DirectConnection);
-    connect(mCurrentSocket, SIGNAL(bytesWritten(qint64)), this, SLOT(sendData(qint64)), Qt::DirectConnection);
+    connect(mCurrentSocket, &QTcpSocket::connected, this, &DuktoProtocol::sendMetaData, Qt::DirectConnection);
+    connect(mCurrentSocket, &QTcpSocket::errorOccurred, this, &DuktoProtocol::sendConnectError, Qt::DirectConnection);
+    connect(mCurrentSocket, &QTcpSocket::bytesWritten, this, &DuktoProtocol::sendData, Qt::DirectConnection);
     mCurrentSocket->connectToHost(ipDest, port);
 }
 

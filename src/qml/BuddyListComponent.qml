@@ -18,6 +18,7 @@ Flipable {
         id: buddyMouseArea
         anchors.fill: parent
         hoverEnabled: true
+        onClicked: guiBehind.showSendPage(buddyIp)
     }
 
     Rectangle {

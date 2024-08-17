@@ -1,8 +1,15 @@
 import QtQuick 2.15
 
 Rectangle {
+    id: duktoOverlay
     color: "#00000000"
+
+    // state: guiBehind.showTermsOnStart ? "termspage" : ""
     state: ""
+
+    function refreshSettingsColor() {
+        settingsPage.refreshColor();
+    }
 
     Rectangle {
         id: disabler
@@ -35,6 +42,67 @@ Rectangle {
         visible: false
     }
 
+    SendPage {
+        id: sendPage
+        anchors.centerIn: parent
+        width: parent.width
+        height: parent.height
+        opacity: 0
+        onBack: parent.state = ""
+        onShowTextPage: {
+            showTextPage.setTextEditFocus();
+            parent.state = "showtext";
+        }
+        visible: false
+    }
+
+    ShowTextPage {
+        id: showTextPage
+        anchors.centerIn: parent
+        width: parent.width
+        height: parent.height
+        opacity: 0
+        onBack: parent.state = ""
+        onBackOnSend: {
+            sendPage.setDestinationFocus();
+            parent.state = "send"
+        }
+        visible: false
+    }
+
+    ProgressPage {
+        id: progressPage
+        anchors.centerIn: parent
+        width: parent.width
+        height: parent.height
+        opacity: 0
+        visible: false
+    }
+
+    MessagePage {
+        id: messagePage
+        anchors.centerIn: parent
+        width: parent.width
+        height: parent.height
+        opacity: 0
+        onBack: parent.state = backState
+        visible: false
+    }
+
+    TermsPage {
+        id: termsPage
+        anchors.centerIn: parent
+        width: parent.width
+        height: parent.height
+        opacity: 0
+        onOk: {
+            guiBehind.showTermsOnStart = false;
+            parent.state = ""
+        }
+        visible: false
+    }
+
+
     states: [
         State {
             name: "ip"
@@ -55,6 +123,30 @@ Rectangle {
                 target: settingsPage
                 opacity: 1
                 visible: true
+            }
+        },
+        State {
+            name: "send"
+            PropertyChanges {
+                target: sendPage
+                opacity: 1
+                visible: true
+            }
+            PropertyChanges {
+                target: duktoOverlay
+                color: theme.color6
+            }
+        },
+        State {
+            name: "showtext"
+            PropertyChanges {
+                target: showTextPage
+                opacity: 1
+                visible: true
+            }
+            PropertyChanges {
+                target: duktoOverlay
+                color: theme.color6
             }
         }
     ]
