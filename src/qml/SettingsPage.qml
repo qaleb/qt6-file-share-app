@@ -81,12 +81,14 @@ Rectangle {
 
     Rectangle {
         id: textPath
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: labelPath.bottom
-        anchors.leftMargin: 17
-        anchors.rightMargin: 17
-        anchors.topMargin: 8
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: labelPath.bottom
+            leftMargin: 17
+            rightMargin: 17
+            topMargin: 8
+        }
         height: 30
         color: theme.color2
         clip: true
@@ -153,12 +155,14 @@ Rectangle {
 
     Rectangle {
         id: rectBuddyName
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: labelBuddyName.bottom
-        anchors.leftMargin: 17
-        anchors.rightMargin: 17
-        anchors.topMargin: 8
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: labelBuddyName.bottom
+            leftMargin: 17
+            rightMargin: 17
+            topMargin: 8
+        }
         height: 30
         color: theme.color2
         clip: true
@@ -211,9 +215,11 @@ Rectangle {
         id: picker
         width: 185
         height: 163
-        anchors.top: labelColor.bottom
-        anchors.topMargin: 8
-        anchors.left: labelColor.left
+        anchors {
+            top: labelColor.bottom
+            topMargin: 8
+            left: labelColor.left
+        }
         onChanged: {
             guiBehind.changeThemeColor(colorValue);
         }
@@ -221,10 +227,12 @@ Rectangle {
 
     ColorBox {
         id: cbox1
-        anchors.top: labelColor.bottom
-        anchors.topMargin: 8
-        anchors.left: picker.right
-        anchors.leftMargin: 20
+        anchors {
+            top: labelColor.bottom
+            topMargin: 8
+            left: picker.right
+            leftMargin: 20
+        }
         color: "#248B00"
         onClicked: color => { picker.setColor(color) }
     }

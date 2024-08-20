@@ -2,7 +2,7 @@ QT += quick
 QT += core5compat
 QT += widgets
 QT += core
-Qt += core-private
+QT += gui
 
 VERSION = 6.2024.01.01
 # Define the preprocessor macro to get the application version in our application.
@@ -70,4 +70,9 @@ HEADERS += \
 contains(ANDROID_TARGET_ARCH,arm64-v8a) {
     ANDROID_PACKAGE_SOURCE_DIR = \
         $$PWD/android
+}
+
+android {
+# Include the shared_storage library
+# include(/home/qaleb/coding/android/shared_storage/shared_storage.pri)
 }

@@ -15,8 +15,7 @@ Theme::Theme(QObject *parent) :
 
 void Theme::setThemeColor(QString color)
 {
-    QColor c;
-    c.setNamedColor(color);
+    QColor c = QColor::fromString(color);
     c.setRed(qMin(c.red() + 40, 255));
     c.setGreen(qMin(c.green() + 40, 255));
     c.setBlue(qMin(c.blue() + 40, 255));
@@ -29,24 +28,21 @@ void Theme::setThemeColor(QString color)
 
 float Theme::getHue(QString color) {
 
-    QColor c;
-    c.setNamedColor(color);
+    QColor c = QColor::fromString(color);
     QColor converted = c.toHsv();
     return converted.hsvHueF();
 }
 
 float Theme::getSaturation(QString color) {
 
-    QColor c;
-    c.setNamedColor(color);
+    QColor c = QColor::fromString(color);
     QColor converted = c.toHsv();
     return converted.hsvSaturationF();
 }
 
 float Theme::getLightness(QString color) {
 
-    QColor c;
-    c.setNamedColor(color);
+    QColor c = QColor::fromString(color);
     QColor converted = c.toHsv();
     return converted.valueF();
 }

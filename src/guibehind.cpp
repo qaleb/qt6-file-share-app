@@ -23,6 +23,8 @@
 #if defined(Q_OS_ANDROID)
 #include <QJniObject>
 #include <QJniEnvironment>
+// #include <sharedstorage.h>
+// #include "utils.h"
 #endif
 
 #define NETWORK_PORT 4644 // 6742
@@ -33,10 +35,10 @@ GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
     mMiniWebServer(NULL), mSettings(this), mDestBuddy(NULL), mUpdatesChecker(NULL)
 {
     // Change current folder
-    QDir::setCurrent(mSettings.currentPath());
+    QDir::setCurrent(currentPath());
 
-    QString rootPath = QStandardPaths::standardLocations(QStandardPaths::DownloadLocation).value(0);
-    qDebug() << "The general download path is:" << rootPath;
+    // QString rootPath = QStandardPaths::standardLocations(QStandardPaths::DownloadLocation).value(0);
+    // qDebug() << "The general download path is:" << rootPath;
 
     // Status variables
     // mView->setGuiBehindReference(this);
@@ -45,7 +47,7 @@ GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
     setShowUpdateBanner(false);
 
     // Clipboard object
-    mClipboard = QGuiApplication::clipboard();
+    mClipboard = QApplication::clipboard();
     connect(mClipboard, SIGNAL(dataChanged()), this, SLOT(clipboardChanged()));
     clipboardChanged(); // Initial call to handle current clipboard data
 
@@ -239,32 +241,25 @@ void GuiBehind::openFile(QString path)
 
 void GuiBehind::openDestinationFolder() {
 #if defined(Q_OS_ANDROID)
-    // Check for a file manager app (optional)
-    QJniObject intent("android/content/Intent", "(Ljava/lang/String;)V",
-                      QJniObject::getStaticObjectField("android/content/Intent",
-                                                       "ACTION_VIEW",
-                                                       "Ljava/lang/String;").object<jstring>());
+    QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::currentPath()));
+    // Get the singleton instance of SharedStorage
+    // auto &sharedStorage = android::provider::SharedStorage::instance();
 
-    // Convert QUrl to jstring
-    QString urlString = QUrl::fromLocalFile(currentPath()).toString();
-    QJniObject jurlString = QJniObject::fromString(urlString);
+    // Define a callback function to handle the result of the document request
+    // auto callback = [](int /* requestCode */, android::net::Uri uri) {
+    //     qDebug() << "Document URI:" << uri.toString();
+    //     // You can now use the URI to access or manipulate the file
+    // };
 
-    intent.callObjectMethod("setDataAndType", "(Landroid/net/Uri;Ljava/lang/String;)Landroid/content/Intent;",
-                            QJniObject::callStaticObjectMethod("android/net/Uri",
-                                                               "parse",
-                                                               "(Ljava/lang/String;)Landroid/net/Uri;",
-                                                               jurlString.object()).object(),
-                            QJniObject::fromString("resource/folder").object<jstring>());
+    // Request to open the document tree (e.g., Downloads directory)
+    // sharedStorage.openDocumentTree(1 /* requestCode */, callback);
 
-    // Access the Android activity context directly
-    QJniObject activity = QJniObject::callStaticObjectMethod(
-        "org/qtproject/qt/android/QtNative",
-        "activity",
-        "()Landroid/app/Activity;");
+// // Alternatively, you can open a specific document by MIME type
+// QStringList mimeTypes = {"text/plain"};
+// sharedStorage.openDocument(1 /* requestCode */, callback, mimeTypes);
 
-    // Start the activity with the intent
-    activity.callMethod<void>("startActivity", "(Landroid/content/Intent;)V", intent.object<jobject>());
-
+// You can also create a new document in shared storage
+// sharedStorage.createDocument(1 /* requestCode */, callback, "text/plain", "example_file.txt");
 #else
     QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::currentPath()));
 #endif
@@ -316,9 +311,9 @@ void GuiBehind::showSendPage(QString ip)
     emit gotoSendPage();
 }
 
-void GuiBehind::sendDroppedFiles(QStringList *files)
+void GuiBehind::sendDroppedFiles(const QStringList &files)
 {
-    if (files->count() == 0) return;
+    if (files.isEmpty()) return;
 
     // Check if there's no selected buddy
     // (but there must be only one buddy in the buddy list)
@@ -328,8 +323,17 @@ void GuiBehind::sendDroppedFiles(QStringList *files)
         showSendPage(mBuddiesList.fistBuddyIp());
     }
 
+    QStringList localPaths;
+
+    foreach (const QString &url, files) {
+        QUrl fileUrl(url);
+        if (fileUrl.isLocalFile()) {
+            localPaths.append(fileUrl.toLocalFile());
+        }
+    }
+
     // Send files
-    QStringList toSend = *files;
+    QStringList toSend = localPaths;
     startTransfer(toSend);
 }
 
@@ -353,29 +357,43 @@ void GuiBehind::sendBuddyDroppedFiles(const QStringList &urls)
     startTransfer(toSend);
 }
 
-void GuiBehind::sendSomeFiles()
+void GuiBehind::sendSomeFiles(const QStringList &files)
 {
-    // Show file selection dialog
-    QStringList files = QFileDialog::getOpenFileNames(nullptr, tr("Send some files"));
+    if (files.isEmpty()) return;
 
-    if (files.count() == 0) return;
-    qDebug() <<"The files are:" << files;
+    QStringList localPaths;
+
+    foreach (const QString &file, files) {
+        QUrl fileUrl(file);
+        if (fileUrl.isLocalFile()) {
+            localPaths.append(fileUrl.toLocalFile());
+        }
+    }
+
+    // qDebug() << localPaths;
+
     // Send files
-    QStringList toSend = files;
+    QStringList toSend = localPaths;
     startTransfer(toSend);
 }
 
-void GuiBehind::sendFolder()
+void GuiBehind::sendAllFiles(const QStringList &files)
 {
-    // Show folder selection dialog
-    QString dirname = QFileDialog::getExistingDirectory(nullptr, tr("Change folder"), ".",
-                                                        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if (files.isEmpty()) return;
 
-    if (dirname == "") return;
+    QStringList localPaths;
+
+    foreach (const QString &file, files) {
+        QUrl fileUrl(file);
+        if (fileUrl.isLocalFile()) {
+            localPaths.append(fileUrl.toLocalFile());
+        }
+    }
+
+    // qDebug() << localPaths;
 
     // Send files
-    QStringList toSend;
-    toSend.append(dirname);
+    QStringList toSend = localPaths;
     startTransfer(toSend);
 }
 
@@ -929,53 +947,53 @@ void GuiBehind::createActions()
 
 void GuiBehind::createTrayIcon()
 {
-    #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-        trayIconMenu = new QMenu(mView);
-    #else
-        trayIconMenu = new QMenu(nullptr);
-    #endif
-        // trayIconMenu->addAction(minimizeAction);
-        // //    trayIconMenu->addAction(maximizeAction);
-        // trayIconMenu->addAction(restoreAction);
-        // trayIconMenu->addSeparator();
-        // trayIconMenu->addAction(quitAction);
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    trayIconMenu = new QMenu(mView);
+#else
+    trayIconMenu = new QMenu(nullptr);
+#endif
+    // trayIconMenu->addAction(minimizeAction);
+    // //    trayIconMenu->addAction(maximizeAction);
+    // trayIconMenu->addAction(restoreAction);
+    // trayIconMenu->addSeparator();
+    // trayIconMenu->addAction(quitAction);
 
-        // trayIcon = new QSystemTrayIcon(mView);
-        // trayIcon->setContextMenu(trayIconMenu);
-        // QIcon icon(":/dukto.png");
-        // trayIcon->setIcon(icon);
-        // //trayIcon->setToolTip("test");
-        // connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
-        //         this, SLOT(iconActivated(QSystemTrayIcon::ActivationReason)));
+    // trayIcon = new QSystemTrayIcon(mView);
+    // trayIcon->setContextMenu(trayIconMenu);
+    // QIcon icon(":/dukto.png");
+    // trayIcon->setIcon(icon);
+    // //trayIcon->setToolTip("test");
+    // connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
+    //         this, SLOT(iconActivated(QSystemTrayIcon::ActivationReason)));
 
 }
 
 void GuiBehind::iconActivated(QSystemTrayIcon::ActivationReason reason)
 {
-        switch (reason) {
-        case QSystemTrayIcon::Trigger:
-            //single left click
-    #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-            // qDebug() << "//TODO:QT5 single left click on systray icon";
-            // if (mView->isVisible() || mView->windowState() == Qt::WindowMinimized) {
-            //     mView->showNormal(); // Restore the application if it is hidden
-            // } else {
-            //     mView->hide();
-            // }
-    #else
-            if (mView->isHidden() || mView->isMinimized()) {
-                mView->showNormal();
-            } else {
-                mView->hide();
-            }
-    #endif
-            break;
-        case QSystemTrayIcon::DoubleClick:
-            //double click
-            break;
-        case QSystemTrayIcon::MiddleClick:
-            break;
-        default:
-            ;
+    switch (reason) {
+    case QSystemTrayIcon::Trigger:
+        //single left click
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+        // qDebug() << "//TODO:QT5 single left click on systray icon";
+        // if (mView->isVisible() || mView->windowState() == Qt::WindowMinimized) {
+        //     mView->showNormal(); // Restore the application if it is hidden
+        // } else {
+        //     mView->hide();
+        // }
+#else
+        if (mView->isHidden() || mView->isMinimized()) {
+            mView->showNormal();
+        } else {
+            mView->hide();
         }
+#endif
+        break;
+    case QSystemTrayIcon::DoubleClick:
+        //double click
+        break;
+    case QSystemTrayIcon::MiddleClick:
+        break;
+    default:
+        ;
+    }
 }

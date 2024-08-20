@@ -473,23 +473,23 @@ void DuktoProtocol::sendFile(QString ipDest, qint16 port, QStringList files)
     // Check for default port
     if (port == 0) port = DEFAULT_TCP_PORT;
 
-    // Verifica altre attività in corso
+    // Check if other activities are in progress
     if (mIsReceiving || mIsSending) return;
     mIsSending = true;
 
-    // File da inviare
+    // Files to send
     mFilesToSend = expandTree(files);
     mFileCounter = 0;
 
-    // Connessione al destinatario
+    // Connect to the recipient
     mCurrentSocket = new QTcpSocket(this);
 
-    // Gestione segnali
-    connect(mCurrentSocket, SIGNAL(connected()), this, SLOT(sendMetaData()), Qt::DirectConnection);
-    connect(mCurrentSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(sendConnectError(QAbstractSocket::SocketError)), Qt::DirectConnection);
-    connect(mCurrentSocket, SIGNAL(bytesWritten(qint64)), this, SLOT(sendData(qint64)), Qt::DirectConnection);
+    // Handle signals
+    connect(mCurrentSocket, &QTcpSocket::connected, this, &DuktoProtocol::sendMetaData, Qt::DirectConnection);
+    connect(mCurrentSocket, &QTcpSocket::errorOccurred, this, &DuktoProtocol::sendConnectError, Qt::DirectConnection);
+    connect(mCurrentSocket, &QTcpSocket::bytesWritten, this, &DuktoProtocol::sendData, Qt::DirectConnection);
 
-    // Connessione
+    // Connect to host
     mCurrentSocket->connectToHost(ipDest, port);
 }
 
@@ -521,26 +521,26 @@ void DuktoProtocol::sendScreen(QString ipDest, qint16 port, QString path)
     // Check for default port
     if (port == 0) port = DEFAULT_TCP_PORT;
 
-    // Verifica altre attività in corso
+    // Check for other ongoing activities
     if (mIsReceiving || mIsSending) return;
     mIsSending = true;
 
-    // File da inviare
+    // File to send
     QStringList files;
     files.append(path);
     mFilesToSend = expandTree(files);
     mFileCounter = 0;
     mSendingScreen = true;
 
-    // Connessione al destinatario
+    // Connect to the recipient
     mCurrentSocket = new QTcpSocket(this);
 
-    // Gestione segnali
-    connect(mCurrentSocket, SIGNAL(connected()), this, SLOT(sendMetaData()), Qt::DirectConnection);
-    connect(mCurrentSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(sendConnectError(QAbstractSocket::SocketError)), Qt::DirectConnection);
-    connect(mCurrentSocket, SIGNAL(bytesWritten(qint64)), this, SLOT(sendData(qint64)), Qt::DirectConnection);
+    // Handle signals
+    connect(mCurrentSocket, &QTcpSocket::connected, this, &DuktoProtocol::sendMetaData, Qt::DirectConnection);
+    connect(mCurrentSocket, &QTcpSocket::errorOccurred, this, &DuktoProtocol::sendConnectError, Qt::DirectConnection);
+    connect(mCurrentSocket, &QTcpSocket::bytesWritten, this, &DuktoProtocol::sendData, Qt::DirectConnection);
 
-    // Connessione
+    // Establish connection
     mCurrentSocket->connectToHost(ipDest, port);
 }
 

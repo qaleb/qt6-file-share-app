@@ -16,25 +16,18 @@ Rectangle {
 
     signal back();
 
-    // Function to extract the base name from the current folder
-    function extractBaseName(folderPath) {
-        if (folderPath) {
-            var pathString = folderPath.toString(); // Convert once here
-            var parts = pathString.split("/");
-            if (parts.length === 0 || pathString === "file:///storage/emulated/0" || parts[parts.length - 1] === "0") {
-                return "/";
-            }
-            return parts[parts.length - 1];
-        }
-        return "/";
-    }
-
     // Function to construct the path for the currentPathText
     function constructCurrentPath(folderPath) {
         if (folderPath) {
             var pathString = folderPath.toString();
             var baseIndex = pathString.indexOf("/storage/emulated/0");
             if (baseIndex !== -1) {
+                var path = pathString.substring(baseIndex + "/storage/emulated/0".length);
+
+                if(path === "") {
+                    return "/";
+                }
+
                 return pathString.substring(baseIndex + "/storage/emulated/0".length);
             }
         }
@@ -52,7 +45,6 @@ Rectangle {
             var newFolder = newPath.join("/") || "file:///storage/emulated/0"; // Handle empty path
 
             folderModel.folder = newFolder;
-            dialogTitle.text = extractBaseName(folderModel.folder);
             currentPathText.text = constructCurrentPath(folderModel.folder);
         }
         return "/";
@@ -69,9 +61,10 @@ Rectangle {
             right: parent.right
             rightMargin: 15
         }
-        elide: "ElideMiddle"
+        // elide: "ElideMiddle"
         font.pixelSize: 64
-        text: extractBaseName(folderModel.folder) // Set the title to the base name
+        // text: extractBaseName(folderModel.folder) // Set the title to the base name
+        text: "Select a Folder"
         color: theme.color3
     }
 
@@ -118,11 +111,24 @@ Rectangle {
                 width: folderListView.width
                 text: fileName
                 font.pixelSize: 18
-                icon.source: folderModel.isFolder(index) ? "qrc:/assets/icons/folder-fill.svg" : "qrc:/assets/icons/file-fill.svg"
+                icon.source: {
+                    if(folderModel.isFolder(index)){
+                        "qrc:/assets/icons/folder-fill-colored.svg"
+                    } else {
+                        "qrc:/assets/icons/file-fill-colored.svg"
+                    }
+                }
+                icon.cache: true
+                icon.color: {
+                    if(folderModel.isFolder(index)){
+                        "#FFBE1E"
+                    } else {
+                        "#EEEEEE"
+                    }
+                }
                 onClicked: {
                     if (folderModel.isFolder(index)) {
                         folderModel.folder += "/" + fileName;
-                        dialogTitle.text = extractBaseName(folderModel.folder);
                         currentPathText.text = constructCurrentPath(folderModel.folder);
                     } else {
                         fileFolderDialog.selectedFolderUrl = folderModel.folder + "/" + fileName;
@@ -134,9 +140,11 @@ Rectangle {
 
     DialogNavBar {
         id: bottomToolBar
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
+        anchors {
+            bottom: parent.bottom
+            left: parent.left
+            right: parent.right
+        }
         onBack: fileFolderDialog.back()
         onAcceptFolder: {
             guiBehind.changeDestinationFolder(folderModel.folder);

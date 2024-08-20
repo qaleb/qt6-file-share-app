@@ -50,7 +50,6 @@ Rectangle {
         opacity: 0
         onBack: parent.state = ""
         onShowTextPage: {
-            showTextPage.setTextEditFocus();
             parent.state = "showtext";
         }
         visible: false
@@ -64,10 +63,10 @@ Rectangle {
         opacity: 0
         onBack: parent.state = ""
         onBackOnSend: {
-            sendPage.setDestinationFocus();
             parent.state = "send"
         }
         visible: false
+        textInputFocus: false
     }
 
     ProgressPage {
@@ -143,6 +142,7 @@ Rectangle {
                 target: showTextPage
                 opacity: 1
                 visible: true
+                textInputFocus: true
             }
             PropertyChanges {
                 target: duktoOverlay

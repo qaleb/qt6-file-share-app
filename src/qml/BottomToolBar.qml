@@ -15,26 +15,33 @@ Item {
 
     Image {
         source: "qrc:/assets/icons/BottomShadow.png"
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+        }
         fillMode: Image.TileHorizontally
     }
 
     Rectangle {
         y: 3
         id: mainRect
-        anchors.left: parent.left
-        anchors.right: parent.right
+        anchors {
+            left: parent.left
+            right: parent.right
+        }
+
         height: parent.height
         color: theme.color2
 
         IconImage {
             id: openFolderIcon
-            anchors.top: parent.top
-            anchors.topMargin: 5
-            anchors.right: showIpIcon.left
-            anchors.rightMargin: 50
+            anchors {
+                top: parent.top
+                topMargin: 5
+                right: showIpIcon.left
+                rightMargin: 50
+            }
             sourceSize.width: 40
             sourceSize.height: 40
             source: "qrc:/assets/icons/OpenFolder.svg"
@@ -45,7 +52,8 @@ Item {
                     if (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx") {
                         guiBehind.openDestinationFolder();
                     } else {
-                        folderDialog.open();
+                        guiBehind.openDestinationFolder();
+                        // folderDialog.open();
                     }
                 }
             }

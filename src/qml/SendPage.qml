@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Dialogs
 
 Rectangle {
     id: sendPage
@@ -7,14 +8,6 @@ Rectangle {
 
     signal back()
     signal showTextPage()
-
-    onVisibleChanged: {
-        if(visible) setDestinationFocus()
-    }
-
-    function setDestinationFocus() {
-        destinationText.focus = true;
-    }
 
     MouseArea {
         anchors.fill: parent
@@ -47,10 +40,9 @@ Rectangle {
            console.log("A file is on top of me.");
        }*/
 
-        onDropped: {
+        onDropped: function(drop) {
             if (drop.hasUrls) {
                 var filesList = drop.urls.map(function(url) { return url.toString(); });
-                console.log(filesList);
                 // Pass the list of file URLs to the sendDroppedFiles function
                 guiBehind.sendBuddyDroppedFiles(filesList);
             }
@@ -88,11 +80,13 @@ Rectangle {
     BuddyListComponent {
         id: localBuddy
         visible: destinationBuddy.ip !== "IP"
-        anchors.top: backIcon.bottom
-        anchors.topMargin: 25
-        anchors.left: parent.left
-        anchors.leftMargin: 30
-        anchors.right: parent.right
+        anchors {
+            top: backIcon.bottom
+            topMargin: 25
+            left: parent.left
+            leftMargin: 30
+            right: parent.right
+        }
         buddyGeneric: destinationBuddy.genericAvatar
         buddyAvatar: destinationBuddy.avatar
         buddyOsLogo:destinationBuddy.osLogo
@@ -105,11 +99,13 @@ Rectangle {
     BuddyListComponent {
         id: remoteBuddy
         visible: destinationBuddy.ip === "IP"
-        anchors.top: backIcon.bottom
-        anchors.topMargin: 25
-        anchors.left: parent.left
-        anchors.leftMargin: 30
-        anchors.right: parent.right
+        anchors {
+            top: backIcon.bottom
+            topMargin: 25
+            left: parent.left
+            leftMargin: 30
+            right: parent.right
+        }
         buddyGeneric: "qrc:/assets/icons/UnknownLogo.png"
         buddyAvatar: ""
         buddyOsLogo: ""
@@ -141,7 +137,7 @@ Rectangle {
             font.pixelSize: 14
             color: theme.color5
             selectByMouse: true
-            focus: true
+            focus: destRect.visible
         }
 
         Binding {
@@ -199,7 +195,7 @@ Rectangle {
         width: 300
         buttonEnabled: guiBehind.currentTransferBuddy !== ""
         label: qsTr("Send some files")
-        onClicked: guiBehind.sendSomeFiles()
+        onClicked: fileDialog.open()
     }
 
     ButtonDark {
@@ -212,7 +208,7 @@ Rectangle {
         width: 300
         buttonEnabled: guiBehind.currentTransferBuddy !== ""
         label: qsTr("Send a folder")
-        onClicked: guiBehind.sendFolder()
+        onClicked: folderDialog.open()
     }
 
     ButtonDark {
@@ -225,7 +221,28 @@ Rectangle {
         width: 300
         buttonEnabled: guiBehind.currentTransferBuddy !== ""
         label: "Send a screenshot"
-        onClicked: guiBehind.sendScreen()
+        onClicked: guiBehind.sendScreenStage2()
+    }
+
+    FileDialog {
+        id: fileDialog
+        title: "Select Files to Send"
+        acceptLabel: "Select"
+        fileMode: FileDialog.OpenFiles // Enable multiple file selection
+        onAccepted: guiBehind.sendSomeFiles(fileDialog.selectedFiles);
+    }
+
+    FolderDialog {
+        id: folderDialog
+        title: qsTr("Select a Folder to Send")
+        acceptLabel: "Select"
+        options: FolderDialog.ShowDirsOnly
+        currentFolder: guiBehind.currentPath
+        onAccepted: {
+            var folderList = [];
+            folderList.push(folderDialog.selectedFolder); // Add selected folder path to list
+            guiBehind.sendAllFiles(folderList);
+        }
     }
 
     SText {

@@ -9,6 +9,22 @@ Item {
         color: theme.color6
     }
 
+    DropArea {
+        id: dropTarget
+        anchors.fill: parent
+        visible: guiBehind.overlayState === "" && guiBehind.canAcceptDrop()
+
+        onDropped: function(drop) {
+            if(guiBehind.canAcceptDrop()){
+                if (drop.hasUrls) {
+                    var filesList = drop.urls.map(function(url) { return url.toString(); });
+                    // Pass the list of file URLs to the sendDroppedFiles function
+                    guiBehind.sendDroppedFiles(filesList);
+                }
+            }
+        }
+    }
+
     ListView {
         id: buddiesList
         anchors.fill: parent
@@ -32,5 +48,13 @@ Item {
         }
 
         delegate: contactDelegate
+
+        onCountChanged: {
+            if(buddiesList.count === 3){
+                dropTarget.visible = true
+            } else {
+                dropTarget.visible = false
+            }
+        }
     }
 }

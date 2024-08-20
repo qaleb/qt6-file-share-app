@@ -59,8 +59,8 @@ public:
     }
 
     QString getCurrentThemeColor();
-    bool canAcceptDrop();
-    void sendDroppedFiles(QStringList *files);
+    // bool canAcceptDrop();
+    // void sendDroppedFiles(QStringList *files);
 
     QString currentTransferBuddy();
     void setCurrentTransferBuddy(QString buddy);
@@ -163,10 +163,10 @@ public slots:
     void refreshIpList();
     void showTextSnippet(QString text, QString sender);
     void openFile(QString path);
-   void changeDestinationFolder(QString dirpath);
+    void changeDestinationFolder(QString dirpath);
     void showSendPage(QString ip);
-    void sendSomeFiles();
-    void sendFolder();
+    void sendSomeFiles(const QStringList &files);
+    void sendAllFiles(const QStringList &files);
     void sendClipboardText();
     void sendText();
     void sendScreen();
@@ -175,6 +175,8 @@ public slots:
     void resetProgressStatus();
     void abortTransfer();
     void sendBuddyDroppedFiles(const QStringList &files);
+    bool canAcceptDrop();
+    void sendDroppedFiles(const QStringList &files);
 
 #if defined(Q_OS_S60)
     void connectOpened();

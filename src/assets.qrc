@@ -36,5 +36,13 @@
         <file>assets/icons/Accept.svg</file>
         <file>assets/icons/Cancel.svg</file>
         <file>assets/icons/FolderUp.svg</file>
+        <file>assets/icons/file-fill-colored.svg</file>
+        <file>assets/icons/folder-fill-colored.svg</file>
+        <file>assets/icons/RecentFile.png</file>
+        <file>assets/icons/RecentFiles.png</file>
+        <file>assets/icons/file-fill-colored.png</file>
+        <file>assets/icons/folder-fill-colored.png</file>
+        <file>assets/icons/RecentText.png</file>
+        <file>assets/icons/dukto.png</file>
     </qresource>
 </RCC>

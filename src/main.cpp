@@ -2,6 +2,8 @@
 #include <QQmlApplicationEngine>
 #include <QTranslator>
 #include <QLocale>
+#include <QIcon>
+
 #include "guibehind.h"
 
 int main(int argc, char *argv[])
@@ -21,6 +23,9 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("dukto");
     QCoreApplication::setOrganizationName("idv.coolshou");
     QCoreApplication::setOrganizationDomain("com.dukto");
+
+    QIcon icon(":/assets/icons/dukto.png"); // Set the app icon
+    app.setWindowIcon(icon);
 
     QQmlApplicationEngine engine;
 

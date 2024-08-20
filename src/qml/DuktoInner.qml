@@ -87,12 +87,5 @@ Rectangle {
         onShowIpList: parent.showIpList()
         onShowSettings: parent.showSettings()
     }
-
-    transitions: [
-        Transition {
-            NumberAnimation { properties: "x,y"; easing.type: Easing.OutQuart; duration: 1000 }
-            NumberAnimation { properties: "opacity"; easing.type: Easing.InQuad; duration: 500 }
-        }
-    ]
 }
 

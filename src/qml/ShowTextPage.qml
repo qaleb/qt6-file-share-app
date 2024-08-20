@@ -8,16 +8,10 @@ Rectangle {
     signal back()
     signal backOnSend()
 
-    onVisibleChanged: {
-        if(visible) setTextEditFocus()
-    }
-
-    function setTextEditFocus() {
-        textEditSnippet.focus = true;
-    }
+    property alias textInputFocus: textEditSnippet.focus
 
     MouseArea {
-         anchors.fill: parent
+        anchors.fill: parent
     }
 
     IconImage {
@@ -76,20 +70,23 @@ Rectangle {
         id: rectangleText
         border.color: theme.color3
         border.width: 1
-        anchors.top: boxSender.bottom
-        anchors.topMargin: 10
-        anchors.left: parent.left
-        anchors.leftMargin: 15
-        anchors.bottom: buttonCopy.top
-        anchors.bottomMargin: 20
-        anchors.right: parent.right
-        anchors.rightMargin: 10
+        radius: 5
+        anchors {
+            top: boxSender.bottom
+            topMargin: 10
+            left: parent.left
+            leftMargin: 15
+            bottom: buttonCopy.top
+            bottomMargin: 20
+            right: parent.right
+            rightMargin: 10
+        }
 
         Flickable {
             id: flickableText
             anchors.fill: parent
             anchors.margins: 5
-            contentHeight: textEditSnippet.paintedHeight
+            contentHeight: textEditSnippet.contentHeight
             flickableDirection: Flickable.VerticalFlick
 
             clip: true
@@ -108,11 +105,11 @@ Rectangle {
             TextEdit {
                 id: textEditSnippet
                 color: theme.color4
-                width: rectangleText.width - 10
+                anchors.fill: parent
+                anchors.margins: 5
                 font.family: duktofontsmall.name
                 font.pixelSize: 13
-                focus: true
-                selectByMouse: true
+                selectByMouse: false // Disabled due to touch devices, highlights text while scrolling
                 wrapMode: TextEdit.Wrap
                 textFormat: TextEdit.PlainText
                 readOnly: guiBehind.textSnippetSending ? false : true
