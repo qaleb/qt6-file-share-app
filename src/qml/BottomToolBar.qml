@@ -46,6 +46,7 @@ Item {
             sourceSize.height: 40
             source: "qrc:/assets/icons/OpenFolder.svg"
             color: "#fff"
+            visible: (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx")
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
@@ -70,6 +71,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             width: 1
             color: "#fff"
+            visible: openFolderIcon.visible
         }
 
         FolderDialog {

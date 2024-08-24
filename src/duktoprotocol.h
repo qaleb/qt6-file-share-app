@@ -45,7 +45,7 @@ public slots:
 signals:
     void peerListAdded(Peer peer);
     void peerListRemoved(Peer peer);
-    void sendFileComplete(QStringList *files);
+    void sendFileComplete();
     void sendFileError(int code);
     void sendFileAborted();
     void receiveFileStart(QString senderIp);

@@ -587,20 +587,17 @@ void DuktoProtocol::sendData(qint64 b)
 {
     QByteArray d;
 
-    // Aggiornamento statistiche
+    // Update statistics
     mSentData += b;
     updateStatus();
 
-    // Verifica se tutti i dati messi nel buffer
-    // sono stati inviati
+    // Check if all data placed in the buffer has been sent
     mSentBuffer -= b;
 
-    // Se ci sono altri dati da inviare, attendo
-    // che vengano inviati
+    // If there is more data to send, wait for it to be sent
     if (mSentBuffer > 0) return;
 
-    // Se si tratta di un invio testuale, butto dentro
-    // tutto il testo
+    // If it's a textual send, send all the text
     if ((!mTextToSend.isEmpty()) && (mFilesToSend->at(mFileCounter - 1) == "___DUKTO___TEXT___"))
     {
         d.append(mTextToSend.toUtf8().data());
@@ -610,8 +607,7 @@ void DuktoProtocol::sendData(qint64 b)
         return;
     }
 
-    // Se il file corrente non è ancora terminato
-    // invio una nuova parte del file
+    // If the current file is not finished, send a new part of the file
     if (mCurrentFile)
         d = mCurrentFile->read(10000);
     if (d.size() > 0)
@@ -621,17 +617,17 @@ void DuktoProtocol::sendData(qint64 b)
         return;
     }
 
-    // Altrimenti chiudo il file e passo al prossimo
+    // Otherwise, close the file and move to the next one
     d.append(nextElementHeader());
 
-    // Non ci sono altri file da inviare?
+    // Are there no more files to send?
     if (d.size() == 0)
     {
         closeCurrentTransfer();
         return;
     }
 
-    // Invio l'header insime al primo chunk di file
+    // Send the header along with the first chunk of the file
     mTotalSize += d.size();
     if (mCurrentFile)
         d.append(mCurrentFile->read(10000));
@@ -659,7 +655,7 @@ void DuktoProtocol::closeCurrentTransfer(bool aborted)
     }
     mIsSending = false;
     if (!aborted)
-        emit sendFileComplete(mFilesToSend);
+        emit sendFileComplete();
     delete mFilesToSend;
     mFilesToSend = NULL;
 

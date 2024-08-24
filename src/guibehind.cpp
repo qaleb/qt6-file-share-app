@@ -38,6 +38,11 @@ GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
     QObject(parent), mShowBackTimer(NULL), mPeriodicHelloTimer(NULL), mClipboard(NULL),
     mMiniWebServer(NULL), mSettings(this), mDestBuddy(NULL), mUpdatesChecker(NULL)
 {
+#if defined(Q_OS_ANDROID)
+    // Request Permissions on Android
+    requestPermissions();
+#endif
+
     // Change current folder
     QDir::setCurrent(currentPath());
 
@@ -85,7 +90,7 @@ GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
     connect(&mDuktoProtocol, SIGNAL(transferStatusUpdate(qint64,qint64)), this, SLOT(transferStatusUpdate(qint64,qint64)));
     connect(&mDuktoProtocol, SIGNAL(receiveFileComplete(QStringList*,qint64)), this, SLOT(receiveFileComplete(QStringList*,qint64)));
     connect(&mDuktoProtocol, SIGNAL(receiveTextComplete(QString*,qint64)), this, SLOT(receiveTextComplete(QString*,qint64)));
-    connect(&mDuktoProtocol, SIGNAL(sendFileComplete(QStringList*)), this, SLOT(sendFileComplete(QStringList*)));
+    connect(&mDuktoProtocol, SIGNAL(sendFileComplete()), this, SLOT(sendFileComplete()));
     connect(&mDuktoProtocol, SIGNAL(sendFileError(int)), this, SLOT(sendFileError(int)));
     connect(&mDuktoProtocol, SIGNAL(receiveFileCancelled()), this, SLOT(receiveFileCancelled()));
     connect(&mDuktoProtocol, SIGNAL(sendFileAborted()), this, SLOT(sendFileAborted()));
@@ -114,11 +119,6 @@ GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
     mUpdatesChecker = new UpdatesChecker();
     connect(mUpdatesChecker, SIGNAL(updatesAvailable()), this, SLOT(showUpdatesMessage()));
     QTimer::singleShot(2000, mUpdatesChecker, SLOT(start()));
-
-#if defined(Q_OS_ANDROID)
-    // Request Permissions on Android
-    requestPermissions();
-#endif
 }
 
 #if defined(Q_OS_ANDROID)
@@ -128,7 +128,6 @@ bool GuiBehind::requestPermissions() {
 
     // Declare required permissions
     const QStringList permissionList = {
-        "android.permission.MANAGE_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.WRITE_SETTINGS",
         "android.permission.VIBRATE",
@@ -634,11 +633,8 @@ bool GuiBehind::prepareStartTransfer(QString *ip, qint16 *port)
     return true;
 }
 
-void GuiBehind::sendFileComplete(QStringList *files)
+void GuiBehind::sendFileComplete()
 {
-    // To remove warning
-    files = files;
-
     // Show completed message
     setMessagePageTitle(tr("Send"));
 #ifndef Q_OS_S60

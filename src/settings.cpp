@@ -25,11 +25,6 @@ QString Settings::currentPath()
     if ((path != "") && (QDir(path).exists()))
         return path;
 
-#if defined(Q_OS_ANDROID)
-    path = "/sdcard/Download";
-    return path;
-#endif
-
     // Else return the default path for this platform
     path = Platform::getDefaultPath();
     if (QDir(path).exists())

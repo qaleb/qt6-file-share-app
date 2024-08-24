@@ -4,8 +4,7 @@ Rectangle {
     id: duktoOverlay
     color: "#00000000"
 
-    // state: guiBehind.showTermsOnStart ? "termspage" : ""
-    state: ""
+    state: guiBehind.showTermsOnStart ? "termspage" : ""
 
     function refreshSettingsColor() {
         settingsPage.refreshColor();

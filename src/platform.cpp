@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QProcess>
 #include <QRegularExpression>
+#include <QStandardPaths>
 
 #if defined(Q_OS_MAC)
 #include <QTemporaryFile>
@@ -172,12 +173,12 @@ QString Platform::getPlatformName()
     return "Windows";
 #elif defined(Q_OS_MAC)
     return "Macintosh";
+#elif defined(Q_OS_ANDROID)
+    return "Android";
 #elif defined(Q_OS_UNIX)
     return "Linux";
 #elif defined(Q_OS_S60)
     return "Symbian";
-#elif defined(Q_OS_ANDROID)
-    return "Android";
 #else
     return "Unknown";
 #endif
@@ -214,23 +215,17 @@ QString Platform::getAvatarPath()
 // Returns the platform default output path
 QString Platform::getDefaultPath()
 {
-    // For Windows it's the Desktop folder
-#if defined(Q_OS_WIN)
-    return QString(getenv("USERPROFILE")) + "\\Desktop";
-#elif defined(Q_OS_MAC)
-    return QString(getenv("HOME")) + "/Desktop";
-#elif defined(Q_OS_UNIX)
-    return QString(getenv("HOME"));
-#elif defined(Q_OS_S60)
-    return "E:\\Dukto";
-#elif defined(Q_OS_SIMULATOR)
-    return "D:\\";
-#elif defined(Q_OS_ANDROID)
-    return QString(getenv("HOME"));
-#else
-#error "Unknown default path for this platform"
+    // Get the default Downloads folder
+    QString downloadsPath = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+
+// For android devices, create a Dukto folder inside Downloads folder
+#if defined(Q_OS_ANDROID)
+    // Return Dowloads as the default path
+    return "/sdcard/Download";
 #endif
 
+    // On desktop platforms and other platforms, return the Downloads folder as the default path
+    return downloadsPath;
 }
 
 #if defined(Q_OS_ANDROID)
