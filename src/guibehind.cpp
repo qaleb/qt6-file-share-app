@@ -6,6 +6,7 @@
 #include <QQuickView>
 #include <QQmlProperty>
 #include <QDir>
+#include <QUrl>
 #include <QDesktopServices>
 #include <QRandomGenerator>
 #include <QStandardPaths>
@@ -23,6 +24,9 @@
 #if defined(Q_OS_ANDROID)
 #include <QJniObject>
 #include <QJniEnvironment>
+#include <QtCore/private/qandroidextras_p.h>
+#include <jni.h>
+#include <QtCore/QCoreApplication>
 // #include <sharedstorage.h>
 // #include "utils.h"
 #endif
@@ -110,7 +114,47 @@ GuiBehind::GuiBehind(QQmlApplicationEngine &engine, QObject *parent) :
     mUpdatesChecker = new UpdatesChecker();
     connect(mUpdatesChecker, SIGNAL(updatesAvailable()), this, SLOT(showUpdatesMessage()));
     QTimer::singleShot(2000, mUpdatesChecker, SLOT(start()));
+
+#if defined(Q_OS_ANDROID)
+    // Request Permissions on Android
+    requestPermissions();
+#endif
 }
+
+#if defined(Q_OS_ANDROID)
+// Request Permissions on Android
+bool GuiBehind::requestPermissions() {
+    QList<bool> permissions;
+
+    // Declare required permissions
+    const QStringList permissionList = {
+        "android.permission.MANAGE_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.WRITE_SETTINGS",
+        "android.permission.VIBRATE",
+        "android.permission.INTERNET",
+        "android.permission.WAKE_LOCK",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_PROFILE",
+        "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO"
+    };
+
+    for (const QString &permission : permissionList) {
+        auto result = QtAndroidPrivate::checkPermission(permission).result();
+        if (result != QtAndroidPrivate::Authorized) {
+            result = QtAndroidPrivate::requestPermission(permission).result();
+            if (result == QtAndroidPrivate::Denied) {
+                permissions.append(false);
+            }
+        }
+    }
+
+    return permissions.isEmpty();
+}
+#endif
 
 QRect GuiBehind::windowGeometry()
 {
@@ -245,14 +289,14 @@ void GuiBehind::openDestinationFolder() {
     // Get the singleton instance of SharedStorage
     // auto &sharedStorage = android::provider::SharedStorage::instance();
 
-    // Define a callback function to handle the result of the document request
-    // auto callback = [](int /* requestCode */, android::net::Uri uri) {
-    //     qDebug() << "Document URI:" << uri.toString();
-    //     // You can now use the URI to access or manipulate the file
-    // };
+// Define a callback function to handle the result of the document request
+// auto callback = [](int /* requestCode */, android::net::Uri uri) {
+//     qDebug() << "Document URI:" << uri.toString();
+//     // You can now use the URI to access or manipulate the file
+// };
 
-    // Request to open the document tree (e.g., Downloads directory)
-    // sharedStorage.openDocumentTree(1 /* requestCode */, callback);
+// Request to open the document tree (e.g., Downloads directory)
+// sharedStorage.openDocumentTree(1 /* requestCode */, callback);
 
 // // Alternatively, you can open a specific document by MIME type
 // QStringList mimeTypes = {"text/plain"};
@@ -364,18 +408,70 @@ void GuiBehind::sendSomeFiles(const QStringList &files)
     QStringList localPaths;
 
     foreach (const QString &file, files) {
+#if defined(Q_OS_ANDROID)
+        // Handle content URI on Android
+        QString localFilePath = convertContentUriToFilePath(file);
+        if (!localFilePath.isEmpty()) {
+            localPaths.append(localFilePath);
+        }
+#endif
         QUrl fileUrl(file);
+
         if (fileUrl.isLocalFile()) {
+            // If the file is a local file, append it directly
             localPaths.append(fileUrl.toLocalFile());
         }
+
     }
 
-    // qDebug() << localPaths;
+    if (localPaths.isEmpty()) return;
 
     // Send files
-    QStringList toSend = localPaths;
-    startTransfer(toSend);
+    startTransfer(localPaths);
 }
+
+#if defined(Q_OS_ANDROID)
+QString GuiBehind::convertContentUriToFilePath(const QString &uri) {
+    // Get the JNI Environment
+    QJniEnvironment env;
+
+    // Convert QString to jstring (JNI)
+    jstring jUriString = env->NewStringUTF(uri.toUtf8().constData());
+
+    // Find the Android Uri class and the method to parse a string into a Uri
+    jclass uriClass = env->FindClass("android/net/Uri");
+    jmethodID parseMethod = env->GetStaticMethodID(uriClass, "parse", "(Ljava/lang/String;)Landroid/net/Uri;");
+
+    // Convert the jstring to a Uri object
+    jobject jUri = env->CallStaticObjectMethod(uriClass, parseMethod, jUriString);
+
+    // Find the Java FileUtils class
+    jclass fileUtilsClass = env->FindClass("idv/coolshou/fileutils/FileUtils");
+
+    // Find the method ID for "getPathFromUri"
+    jmethodID getPathFromUriMethod = env->GetStaticMethodID(fileUtilsClass, "getPathFromUri", "(Landroid/content/Context;Landroid/net/Uri;)Ljava/lang/String;");
+
+    // Get the Android context
+    jobject context = QNativeInterface::QAndroidApplication::context();
+
+    // Call the Java method with the correct Uri object
+    jobject result = env->CallStaticObjectMethod(fileUtilsClass, getPathFromUriMethod, context, jUri);
+
+    // Convert the result (jstring) back to QString
+    const char *nativeString = env->GetStringUTFChars(static_cast<jstring>(result), nullptr);
+    QString localPath = QString::fromUtf8(nativeString);
+    env->ReleaseStringUTFChars(static_cast<jstring>(result), nativeString);
+
+    // Clean up
+    env->DeleteLocalRef(jUriString);
+    env->DeleteLocalRef(jUri);
+    env->DeleteLocalRef(uriClass);
+    env->DeleteLocalRef(fileUtilsClass);
+    env->DeleteLocalRef(result);
+
+    return localPath;
+}
+#endif
 
 void GuiBehind::sendAllFiles(const QStringList &files)
 {

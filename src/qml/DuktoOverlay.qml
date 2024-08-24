@@ -117,6 +117,32 @@ Rectangle {
             }
         },
         State {
+            name: "progress"
+            PropertyChanges {
+                target: progressPage
+                opacity: 1
+                visible: true
+            }
+            PropertyChanges {
+                target: disabler
+                opacity: 1
+                visible: true
+            }
+        },
+        State {
+            name: "showtext"
+            PropertyChanges {
+                target: showTextPage
+                opacity: 1
+                visible: true
+                textInputFocus: true
+            }
+            PropertyChanges {
+                target: duktoOverlay
+                color: theme.color6
+            }
+        },
+        State {
             name: "settings"
             PropertyChanges {
                 target: settingsPage
@@ -137,16 +163,25 @@ Rectangle {
             }
         },
         State {
-            name: "showtext"
+            name: "message"
             PropertyChanges {
-                target: showTextPage
+                target: messagePage
                 opacity: 1
                 visible: true
-                textInputFocus: true
             }
             PropertyChanges {
-                target: duktoOverlay
-                color: theme.color6
+                target: disabler
+                opacity: 1
+                visible: true
+
+            }
+        },
+        State {
+            name: "termspage"
+            PropertyChanges {
+                target: termsPage
+                opacity: 1
+                visible: true
             }
         }
     ]

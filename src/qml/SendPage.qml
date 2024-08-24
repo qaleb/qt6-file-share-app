@@ -222,6 +222,7 @@ Rectangle {
         buttonEnabled: guiBehind.currentTransferBuddy !== ""
         label: "Send a screenshot"
         onClicked: guiBehind.sendScreenStage2()
+        visible: (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx")
     }
 
     FileDialog {
@@ -251,9 +252,19 @@ Rectangle {
             left: localBuddy.left
             bottom: parent.bottom
             bottomMargin: 20
+            right: parent.right
+            rightMargin: 30
         }
         font.pixelSize: 14
         color: theme.color5
-        text: qsTr("Or simply drag & drop some files and folders\nover this window to send them to your buddy.")
+        horizontalAlignment: Text.AlignHCenter
+        wrapMode: Text.Wrap
+        text: {
+            if (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx") {
+                qsTr("Or simply drag & drop some files and folders\nover this window to send them to your buddy.")
+            } else {
+                qsTr("Simple and effortless file sharing, made simple with Dukto.\n— Swift and Seamless.")
+            }
+        }
     }
 }

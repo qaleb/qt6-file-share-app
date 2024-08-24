@@ -109,7 +109,8 @@ Rectangle {
                 anchors.margins: 5
                 font.family: duktofontsmall.name
                 font.pixelSize: 13
-                selectByMouse: false // Disabled due to touch devices, highlights text while scrolling
+                // Disabled due to touch devices, highlights text while scrolling
+                selectByMouse: (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx")
                 wrapMode: TextEdit.Wrap
                 textFormat: TextEdit.PlainText
                 readOnly: guiBehind.textSnippetSending ? false : true

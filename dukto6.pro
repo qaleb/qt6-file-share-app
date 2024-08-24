@@ -3,10 +3,12 @@ QT += core5compat
 QT += widgets
 QT += core
 QT += gui
+QT += gui-private
 
 VERSION = 6.2024.01.01
 # Define the preprocessor macro to get the application version in our application.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
+DEFINES += VERSION_CODE=1
 
 SOURCES += \
     src/buddylistitemmodel.cpp \
@@ -51,6 +53,9 @@ DISTFILES += \
     android/gradlew \
     android/gradlew.bat \
     android/res/values/libs.xml \
+    android/res/xml/qtprovider_paths.xml \
+    android/src/idv/coolshou/FileUtils.java \
+    src/FileUtils.java \
     src/assets/icons/MoreIcon.svg
 
 HEADERS += \

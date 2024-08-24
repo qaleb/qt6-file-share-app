@@ -96,11 +96,20 @@ public:
     bool showUpdateBanner();
     void setShowUpdateBanner(bool show);
     //    void setBuddyName(QString name);
+
+
     QString buddyName();
     QString appVersion();
 
     bool isTrayIconVisible();
     void setTrayIconVisible(bool bVisible);
+
+    #if defined(Q_OS_ANDROID)
+    // Convert content URI to local file paths
+    QString convertContentUriToFilePath(const QString &files);
+    // Request Permissions on Android
+    bool requestPermissions();
+    #endif
 
 #if defined(Q_OS_S60)
     void initConnection();
